@@ -2,7 +2,7 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
  
-img = cv.imread('../data/10b.jpg')
+img = cv.imread('../data/10f_blackbg.jpg')
 assert img is not None, "file could not be read, check with os.path.exists()"
 
 gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
