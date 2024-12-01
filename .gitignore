@@ -5,3 +5,4 @@ project/target/
 .cache
 /**/.idea/
 .bsp/
+output_edges_contours/
