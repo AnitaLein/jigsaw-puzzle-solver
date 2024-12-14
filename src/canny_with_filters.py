@@ -39,13 +39,55 @@ for i, cnt in enumerate(filtered_contours):
     # save and visualize the edge image
     output_filename = os.path.join(output_folder, f'output_edges_contour_{i}.png')
     cv.imwrite(output_filename, edge_image)
-    cv.imshow(f'Contour {i}', edge_image)
+    #cv.imshow(f'Contour {i}', edge_image)
 
-cv.imshow("Original", img)
-cv.imshow("Edges", edges)
-cv.imshow("Edges_MedianBlur", edges_medianblur)
-cv.imshow("Edges_BilateralBlur", edges_bilateralblur)
-cv.imshow("Median Filter", median_blur)
-cv.imshow("Bilateral Filter", bilateral_blur)
+
+input_folder = 'output_edges_contours'
+output_folder = 'output_corners'
+input_images = glob.glob(os.path.join(input_folder, '*.png'))
+
+# harris corner detection
+'''for i, image_path in enumerate(input_images):
+    edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+
+    edge_image_float = np.float32(edge_image)
+    
+    corners = cv.cornerHarris(edge_image_float, blockSize=2, ksize=3, k=0.04)
+    corners_dilated = cv.dilate(corners, None)
+
+    corners_image = cv.cvtColor(edge_image, cv.COLOR_GRAY2BGR)
+    corners_image[corners_dilated > 0.1 * corners_dilated.max()] = [0, 0, 255]  # Rot für Ecken
+
+    output_filename = os.path.join(output_folder, f'corners_{i}.png')
+    cv.imwrite(output_filename, corners_image)'''
+
+# shi-tomasi corner detection
+for i, image_path in enumerate(input_images):
+    edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+
+    corners = cv.goodFeaturesToTrack(edge_image, maxCorners=6, qualityLevel=0.01, minDistance=20)
+
+    if corners is not None:
+        corners = np.int32(corners)  
+
+        corners_image = cv.cvtColor(edge_image, cv.COLOR_GRAY2BGR)
+        
+        # mark the corners with red circles
+        for corner in corners:
+            x, y = corner.ravel()
+            cv.circle(corners_image, (x, y), 3, (0, 0, 255), -1)
+
+        # save the image with the marked corners
+        output_filename = os.path.join(output_folder, f'corners_{i}.png')
+        cv.imwrite(output_filename, corners_image)
+
+
+#cv.imshow("Original", img)
+#cv.imshow("Edges", edges)
+#cv.imshow("Edges_MedianBlur", edges_medianblur)
+#cv.imshow("Edges_BilateralBlur", edges_bilateralblur)
+#cv.imshow("Median Filter", median_blur)
+#cv.imshow("Bilateral Filter", bilateral_blur)
+#cv.imshow("Harris Corners", edges_with_corners)
 cv.waitKey(0)
 cv.destroyAllWindows()
