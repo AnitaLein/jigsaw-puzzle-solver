@@ -3,6 +3,7 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 import os
 import glob
+import itertools
 
 img = cv.imread('../data/10b.jpg')     
 assert img is not None, "file could not be read, check with os.path.exists()"
@@ -46,6 +47,10 @@ input_folder = 'output_edges_contours'
 output_folder = 'output_corners'
 input_images = glob.glob(os.path.join(input_folder, '*.png'))
 
+files = glob.glob(os.path.join(output_folder, '*.png'))
+for f in files:
+    os.remove(f)
+
 # harris corner detection
 '''for i, image_path in enumerate(input_images):
     edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
@@ -65,7 +70,7 @@ input_images = glob.glob(os.path.join(input_folder, '*.png'))
 for i, image_path in enumerate(input_images):
     edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
 
-    corners = cv.goodFeaturesToTrack(edge_image, maxCorners=6, qualityLevel=0.01, minDistance=20)
+    corners = cv.goodFeaturesToTrack(edge_image, maxCorners=4, qualityLevel=0.01, minDistance=100, blockSize=7)
 
     if corners is not None:
         corners = np.int32(corners)  
