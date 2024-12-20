@@ -49,28 +49,12 @@ for i, cnt in enumerate(filtered_contours):
 
 
 input_folder = 'output_edges_contours'
-output_folder = 'corner_edges'
+output_folder = 'output_corners'
 input_images = glob.glob(os.path.join(input_folder, '*.png'))
 
 files = glob.glob(os.path.join(output_folder, '*.png'))
 for f in files:
     os.remove(f)
-
-# harris corner detection
-'''for i, image_path in enumerate(input_images):
-    edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
-
-    edge_image_float = np.float32(edge_image)
-    
-    corners = cv.cornerHarris(edge_image_float, blockSize=2, ksize=3, k=0.04)
-    corners_dilated = cv.dilate(corners, None)
-
-    corners_image = cv.cvtColor(edge_image, cv.COLOR_GRAY2BGR)
-    corners_image[corners_dilated > 0.1 * corners_dilated.max()] = [0, 0, 255]  # Rot für Ecken
-
-    output_filename = os.path.join(output_folder, f'corners_{i}.png')
-    cv.imwrite(output_filename, corners_image)'''
-
 
 # shi-tomasi corner detection
 for i, image_path in enumerate(input_images):
@@ -87,25 +71,43 @@ for i, image_path in enumerate(input_images):
         # sort the corner points
         sorted_corners = sort_corners(corner_points)    
 
-        contours = [np.array([sorted_corners[i], sorted_corners[(i + 1) % len(sorted_corners)]]) 
-                    for i in range(len(sorted_corners))]
-  
 
         # Create a blank image to draw the contours
         height, width = edge_image.shape
         output_image = cv.cvtColor(edge_image, cv.COLOR_GRAY2BGR)
 
-        # Draw the contours
-        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]  # Colors for each edge
-        for i, contour in enumerate(contours):
-            cv.drawContours(output_image, [contour], -1, colors[i], thickness=2)
-
         # Draw the detected corners for visualization
         for corner in sorted_corners:
-            cv.circle(output_image, corner, radius=5, color=(255, 255, 255), thickness=-1)
+            cv.circle(output_image, corner, radius=10, color=(0, 0, 0), thickness=-1)
         # save the image with the marked corners
         output_filename = os.path.join(output_folder, f'corners_{i}.png')
         cv.imwrite(output_filename, output_image)
+
+input_folder = 'output_corners'
+output_folder = 'corner_edges'
+input_images = glob.glob(os.path.join(input_folder, '*.png'))
+
+files = glob.glob(os.path.join(output_folder, '*.png'))
+for f in files:
+    os.remove(f)
+
+
+for i, image_path in enumerate(input_images):
+    edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+
+    # find contours
+    contours, _ = cv.findContours(edge_image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+    #draw the contours
+    output_image = cv.cvtColor(edge_image, cv.COLOR_GRAY2BGR)
+    cv.drawContours(output_image, contours, 0, (0, 255, 0), 2)
+    cv.drawContours(output_image, contours, 1, (255, 0, 0), 2)
+    cv.drawContours(output_image, contours, 2, (0, 0, 255), 2)
+    cv.drawContours(output_image, contours, 3, (255, 255, 0), 2)
+    output_filename = os.path.join(output_folder, f'corners_{i}.png')
+    cv.imwrite(output_filename, output_image)
+
+    
 
 cv.waitKey(0)
 cv.destroyAllWindows()
