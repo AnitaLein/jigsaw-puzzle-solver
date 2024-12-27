@@ -11,3 +11,4 @@ output_split_edges/
 output_rotated_contours/
 output_translated_contours/
 output_intersection/
+output_intersection_mask/

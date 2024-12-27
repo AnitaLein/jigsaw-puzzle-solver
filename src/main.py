@@ -23,9 +23,10 @@ for i in range(0, len(all_contours)):
             continue
         for x in range(0, 4):
             for y in range(0, 4):
-                check_countour_intersection(all_contours[i][x], all_contours[j][y], img, i, j, x, y)
-
+                filter_contour_intersection(all_contours[i][x], all_contours[j][y], img, i, j, x, y)
 print("Done")
+
+#calculate_intersection(all_contours[0][0], all_contours[1][0], img)
 
 # uncomment to rotate and translate contours
 '''
