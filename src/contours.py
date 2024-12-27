@@ -23,7 +23,6 @@ def find_contours(filtered_img):
     files = glob.glob(os.path.join(output_folder, '*.png'))
     for f in files:
         os.remove(f)
-
     # extract and save edges
     for i, cnt in enumerate(filtered_contours):
         # create an empty image and draw the contour
@@ -34,6 +33,7 @@ def find_contours(filtered_img):
         output_filename = os.path.join(output_folder, f'output_edges_contour_{i}.png')
         cv.imwrite(output_filename, edge_image)
         #cv.imshow(f'Contour {i}', edge_image)
+    return contours
 
 def split_edges():
     input_folder = 'output_corners'
@@ -87,16 +87,27 @@ def rotate_contour(contours, angle, img, counter ):
     output_filename = os.path.join(output_folder, f'rotated_contour_{counter}.png')
     cv.imwrite(output_filename, output_image)
 
-def translate_contour(contour, pos_x, pos_y, img, counter):
+def translate_contour(contour, img, counter):
     output_folder = 'output_translated_contours'
     output_image = np.zeros_like(img)
+    # center of output image
+    center = (img.shape[1]//2, img.shape[0]//2)
     
     for i, cnt in enumerate(contour):
-        # translate the contour
-        translated_cnt = cnt + np.array([pos_x, pos_y])
-
+    # position contour at the center
+        x, y, w, h = cv.boundingRect(cnt)
+        dx = center[0] - (x + w//2)
+        dy = center[1] - (y + h//2)
+        M = np.float32([[1, 0, dx], [0, 1, dy]])
+        translated_cnt = cv.transform(cnt, M)
+        
         # draw the translated contour
         cv.drawContours(output_image, [translated_cnt], -1, (0, 255, 0), 2)
+        # draw the bounding box
+        cv.rectangle(output_image, (x+dx, y+dy), (x+w+dx, y+h+dy), (255, 0, 0), 2)
+        # draw the center of the image
+        cv.circle(output_image, center, 5, (0, 0, 255), -1)
+        # save the translated contour
 
     output_filename = os.path.join(output_folder, f'translated_contour_{counter}.png')
     cv.imwrite(output_filename, output_image)
