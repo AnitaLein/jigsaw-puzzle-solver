@@ -10,4 +10,10 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 find_contours(bilateral_blur)
 find_corners()
-split_edges()
+all_contours = split_edges()
+print(len(all_contours))
+counter = 0
+for piece_contour in all_contours:
+    rotate_contour(piece_contour, 180, img, counter)
+    translate_contour(piece_contour, 200, 200, img, counter)
+    counter += 1
