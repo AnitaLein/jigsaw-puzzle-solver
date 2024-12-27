@@ -67,6 +67,7 @@ def rotate_contour(contours, angle, img, counter ):
     for i, cnt in enumerate(contours):
         # get the bounding box of the contour
         x, y, w, h = cv.boundingRect(cnt)
+        cv.rectangle(output_image, (x, y), (x+w, y+h), (255,0, 0), 2)  
 
         # get the center of the bounding box
         center = (x + w//2, y + h//2)
@@ -78,8 +79,10 @@ def rotate_contour(contours, angle, img, counter ):
         rotated_cnt = cv.transform(cnt, M)
 
         # draw the rotated contour
-    
-        cv.drawContours(output_image, [rotated_cnt], -1, (0, 255, 0), 2)
+        cv.drawContours(output_image, [rotated_cnt], 0, (0, 255, 0), 2)
+        # draw w and h of the bounding box
+        cv.putText(output_image, f'w: {w}', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv.putText(output_image, f'h: {h}', (x, y-30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         # save the rotated contour
     output_filename = os.path.join(output_folder, f'rotated_contour_{counter}.png')
     cv.imwrite(output_filename, output_image)
@@ -90,7 +93,7 @@ def translate_contour(contour, pos_x, pos_y, img, counter):
     
     for i, cnt in enumerate(contour):
         # get the bounding box of the contour
-        #x, y, w, h = cv.boundingRect(cnt)
+        x, y, w, h = cv.boundingRect(cnt)
 
         # translate the contour
         translated_cnt = cnt + np.array([pos_x, pos_y])
