@@ -92,9 +92,6 @@ def translate_contour(contour, pos_x, pos_y, img, counter):
     output_image = np.zeros_like(img)
     
     for i, cnt in enumerate(contour):
-        # get the bounding box of the contour
-        x, y, w, h = cv.boundingRect(cnt)
-
         # translate the contour
         translated_cnt = cnt + np.array([pos_x, pos_y])
 
