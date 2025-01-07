@@ -14,10 +14,6 @@ def find_corners():
     input_folder = 'output_edges_contours'
     output_folder = 'output_corners'
     input_images = glob.glob(os.path.join(input_folder, '*.png'))
-
-    files = glob.glob(os.path.join(output_folder, '*.png'))
-    for f in files:
-        os.remove(f)
 # shi-tomasi corner detection
     for i, image_path in enumerate(input_images):
         edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
