@@ -75,8 +75,8 @@ def create_puzzle_piece(bounding_box, top, top_offset, right, right_offset, bott
     # Scale and translate to output bounding box
     puzzle_piece = []
     for point in points:
-        x = round(bounding_box[0] + bounding_box[2] * point[0])
-        y = round(bounding_box[1] + bounding_box[3] * point[1])
+        x = round(bounding_box[0] + (bounding_box[2] - 1) * point[0])
+        y = round(bounding_box[1] + (bounding_box[3] - 1) * point[1])
         puzzle_piece.append((x, y))
 
     return np.array(puzzle_piece, dtype=np.int32)
@@ -84,7 +84,7 @@ def create_puzzle_piece(bounding_box, top, top_offset, right, right_offset, bott
 
 def main():
     # Main processing
-    image = cv2.imread("../data/10b.jpg", cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("../data/eda_black_merged.jpg", cv2.IMREAD_GRAYSCALE)
     preprocessed_image = preprocess_image(image, False)
     preprocessed_image2 = preprocess_image(image, True)
 
