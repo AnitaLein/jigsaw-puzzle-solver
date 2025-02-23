@@ -4,7 +4,7 @@ from corners import *
 from intersection import *
 
 
-img = cv.imread('../data/eda_black_merged.jpg')     
+img = cv.imread('../data/misc/eda_black_merged.jpg')
 assert img is not None, "file could not be read, check with os.path.exists()"
 
 all_output_folders = ['output_rotated_contours', 'translated_contours', 'output_intersection', 'output_intersection_mask', 'output_corners', 'output_edges_contours', 'output_edges', 'output_split_edges', 'output_intersection_drawing']
