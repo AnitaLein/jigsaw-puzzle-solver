@@ -2,12 +2,17 @@ import cv2 as cv
 from contours import *
 from corners import *
 from intersection import *
+from piece_classification import *
 
 
-img = cv.imread('../data/eda_black_merged.jpg')     
+img = cv.imread('../data/eda_black_merged.jpg', cv2.IMREAD_GRAYSCALE)     
 assert img is not None, "file could not be read, check with os.path.exists()"
 
-all_output_folders = ['output_rotated_contours', 'translated_contours', 'output_intersection', 'output_intersection_mask', 'output_corners', 'output_edges_contours', 'output_edges', 'output_split_edges', 'output_intersection_drawing']
+all_output_folders = [
+    'output_rotated_contours', 'translated_contours', 'output_intersection', 
+    'output_intersection_mask', 'output_corners', 'output_edges_contours', 
+    'output_edges', 'output_split_edges', 'output_intersection_drawing',
+    'output_created_piece']
 for folder in all_output_folders:
     files = glob.glob(os.path.join(folder, '*.png'))
     for f in files:
@@ -16,6 +21,9 @@ for folder in all_output_folders:
 bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 piece_contour = find_contours(bilateral_blur)
+
+classify(img)
+
 #rotated_pieces = rotate_contour(piece_contour, 45, img, 'output_rotated_contours')
 #translated_pieces = translate_contours(piece_contour, img, 'translated_contours')
 find_corners()
