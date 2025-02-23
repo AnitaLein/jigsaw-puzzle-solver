@@ -304,15 +304,12 @@ std::vector<std::vector<cv::Point>> MainWindow::extractContours(const cv::Mat &i
     averageHeight /= contours.size();
 
     // sort by contour center
-    std::ranges::sort(contours, [width = image.cols, averageHeight](const std::vector<cv::Point> &a, const std::vector<cv::Point> &b) {
-        auto gridOrder = [width, averageHeight](const std::vector<cv::Point> &contour) {
-            cv::Moments moments = cv::moments(contour);
-            cv::Point center(moments.m10 / moments.m00, moments.m01 / moments.m00);
-            return center.y * width * 2 / averageHeight + center.x;
-        };
-
-        return gridOrder(a) < gridOrder(b);
-    });
+    auto gridOrder = [width = image.cols, averageHeight](const std::vector<cv::Point> &contour) {
+        cv::Moments moments = cv::moments(contour);
+        cv::Point center(moments.m10 / moments.m00, moments.m01 / moments.m00);
+        return center.y * width * 2 / averageHeight + center.x;
+    };
+    std::ranges::sort(contours, {}, gridOrder);
 
     // reverse all contours to get clockwise orientation
     for (std::vector<cv::Point> &contour: contours) {
