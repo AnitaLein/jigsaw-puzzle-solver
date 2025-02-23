@@ -93,7 +93,7 @@ def classify_piece(original, image):
 
     counter = 0
 
-    classified_pieces = []
+    puzzle_pieces = []
 
     for contour in contours:
         bounding_box = cv2.boundingRect(contour)
@@ -140,7 +140,6 @@ def classify_piece(original, image):
                 basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Nase, best_params[i+1]))
             elif best_params[i] == -1:
                 basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Loch, best_params[i+1]))
-        classified_pieces.append(basic_puzzle_piece)
         
         #print(basic_puzzle_piece)
 
@@ -198,6 +197,7 @@ def classify_piece(original, image):
         # slightly move corners diagonally outwards to improve accuracy
         directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
         corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
+        puzzle_piece = PuzzlePiece([])
 
         # find the indices of the nearest contour points
         corner_indices = []
@@ -228,7 +228,9 @@ def classify_piece(original, image):
                 color = (0, 0, 255)
 
             cv2.polylines(edge_img, [np.array(edge_points)], False, color, 2)
-
+            split_edge = Edge(type, edge_points)
+            puzzle_piece.edges.append(split_edge)
+        puzzle_pieces.append(puzzle_piece)
         # draw corners
         for i in range(len(corner_indices)):
             cv2.circle(edge_img, tuple(contour[corner_indices[i]][0]), 5, (255, 0, 0), cv2.FILLED)
@@ -236,21 +238,6 @@ def classify_piece(original, image):
         cv2.imwrite(os.path.join(output_folder, f'created_piece{counter}.png'), edge_img)
         counter += 1
 
-    return classified_pieces
 
-def sort_pieces_into_folder(params, contour, counter, image):
-    folder_corner_pieces = 'output_corner_pieces'
-    folder_edge_pieces = 'output_edge_pieces'
-    folder_middle_pieces = 'output_center_pieces'
-    zero_count = params.count(0)
-    output_img = np.zeros_like(image)
-    if(zero_count == 2):
-        cv2.drawContours(output_img, contour,  0, 255, cv2.FILLED)
-        cv2.imwrite(os.path.join(folder_corner_pieces, f'corner_piece{counter}.png'), output_img)
-    elif(zero_count == 1):
-        cv2.drawContours(output_img, contour, 0, 255, cv2.FILLED)
-        cv2.imwrite(os.path.join(folder_edge_pieces, f'edge_piece{counter}.png'), output_img)
-    else:
-        cv2.drawContours(output_img, contour,  0, 255, cv2.FILLED)
-        cv2.imwrite(os.path.join(folder_middle_pieces, f'middle_piece{counter}.png'), output_img)
+    return puzzle_pieces
 

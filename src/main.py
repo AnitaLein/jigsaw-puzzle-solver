@@ -3,6 +3,7 @@ from contours import *
 from corners import *
 from intersection import *
 from piece_classification import *
+from edge_matching import *
 
 
 img = cv.imread('../data/misc/eda_black_merged.jpg')
@@ -23,7 +24,14 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 piece_contour = find_contours(bilateral_blur)
 
-basic_classified_pieces = classify_piece(img, gray)
+
+puzzle_pieces = classify_piece(img, gray)
+for puzzle_piece1 in puzzle_pieces:
+    for puzzle_piece2 in puzzle_pieces:
+        edge1 = puzzle_piece1.edges[0]
+        edge2 = puzzle_piece2.edges[0]
+        compare_edges(edge1, edge2)
+        
 #split_edges(basic_classified_pieces)
 #rotated_pieces = rotate_contour(piece_contour, 45, img, 'output_rotated_contours')
 #translated_pieces = translate_contours(piece_contour, img, 'translated_contours')
