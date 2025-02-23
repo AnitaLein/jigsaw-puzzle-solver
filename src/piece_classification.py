@@ -137,30 +137,30 @@ def classify_piece(image):
             (0, -2), (2, 0), (0, 2), (-2, 0)
         ]
 
+        # refine contour
+        for _ in range(100):
+            for point_idx, point in enumerate(puzzle_piece):
+                test = np.zeros_like(mask)
+                cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
+                difference = cv2.absdiff(mask, test)
+                best_diff = cv2.countNonZero(difference)
+                best_dir = (0, 0)
 
-        # for _ in range(100):
-        #     for point_idx, point in enumerate(puzzle_piece):
-        #         test = np.zeros_like(mask)
-        #         cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
-        #         difference = cv2.absdiff(mask, test)
-        #         best_diff = cv2.countNonZero(difference)
-        #         best_dir = (0, 0)
+                for direction in directions:
+                    new_point = point + direction
+                    if 0 <= new_point[0] < mask.shape[1] and 0 <= new_point[1] < mask.shape[0]:
+                        test = np.zeros_like(mask)
+                        puzzle_piece[point_idx] = new_point
+                        cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
+                        difference = cv2.absdiff(mask, test)
+                        diff = cv2.countNonZero(difference)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_dir = direction
 
-        #         for direction in directions:
-        #             new_point = point + direction
-        #             if 0 <= new_point[0] < mask.shape[1] and 0 <= new_point[1] < mask.shape[0]:
-        #                 test = np.zeros_like(mask)
-        #                 puzzle_piece[point_idx] = new_point
-        #                 cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
-        #                 difference = cv2.absdiff(mask, test)
-        #                 diff = cv2.countNonZero(difference)
-        #                 if diff < best_diff:
-        #                     best_diff = diff
-        #                     best_dir = direction
+                        puzzle_piece[point_idx] = point
 
-        #                 puzzle_piece[point_idx] = point
-
-        #         puzzle_piece[point_idx] += best_dir
+                puzzle_piece[point_idx] += best_dir
 
         puzzle_piece += bounding_box[:2]
         output_folder = 'output_created_piece'
