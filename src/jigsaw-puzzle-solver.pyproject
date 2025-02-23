@@ -5,6 +5,7 @@
         "corners.py",
         "intersection.py",
         "canny_with_filters.py",
-        "piece_classification.py"
+        "piece_classification.py",
+        "puzzle_types.py"
     ]
 }

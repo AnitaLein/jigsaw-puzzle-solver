@@ -86,6 +86,11 @@ def create_puzzle_piece(bounding_box, top, top_offset, right, right_offset, bott
 def classify_piece(original, image):
     preprocessed_image = preprocess_image(image, False)
     contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # reverse each contour to get clockwise order
+    for contour in contours:
+        contour[:] = contour[::-1]
+
     counter = 0
 
     classified_pieces = []
@@ -190,18 +195,44 @@ def classify_piece(original, image):
             else:
                 i += 5
 
-        # Slightly move corners diagonally outwards to improve accuracy
+        # slightly move corners diagonally outwards to improve accuracy
         directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
         corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
-        # Move corners to the nearest contour point
-        for i, corner in enumerate(corners):
-            corner = np.squeeze(corner)  # Ensure it's a flat (2,) array
-            distances = [np.linalg.norm(corner - np.squeeze(p)) for p in contour]  # Flatten contour points
-            nearest_idx = np.argmin(distances)
-            corners[i] = contour[nearest_idx].flatten()
-            #contour in green
-            corner = corners[i]
-            cv2.circle(edge_img, tuple(corner), 10, (0,0,0), cv2.FILLED)
+
+        # find the indices of the nearest contour points
+        corner_indices = []
+        for corner in corners:
+            distances = [np.linalg.norm(np.array(corner) - np.array(p)) for p in contour]
+            nearest_corner = np.argmin(distances)
+            corner_indices.append(nearest_corner)
+
+        # split contour into edges
+        for i in range(4):
+            start_idx = corner_indices[i]
+            end_idx = corner_indices[(i + 1) % 4]
+
+            edge_points = []
+            j = start_idx
+            while j != end_idx:
+                edge_points.append(contour[j])
+                j = (j + 1) % len(contour)
+
+            edge_points.append(contour[end_idx])
+
+            type = basic_puzzle_piece.edges[i].type
+            if type == EdgeType.Gerade:
+                color = (0, 255, 255)
+            elif type == EdgeType.Nase:
+                color = (0, 255, 0)
+            elif type == EdgeType.Loch:
+                color = (0, 0, 255)
+
+            cv2.polylines(edge_img, [np.array(edge_points)], False, color, 2)
+
+        # draw corners
+        for i in range(len(corner_indices)):
+            cv2.circle(edge_img, tuple(contour[corner_indices[i]][0]), 5, (255, 0, 0), cv2.FILLED)
+
         cv2.imwrite(os.path.join(output_folder, f'created_piece{counter}.png'), edge_img)
         counter += 1
 
