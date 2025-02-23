@@ -120,14 +120,16 @@ def classify_piece(image):
 
                                         if white < best_white:
                                             best_params = (top, top_offset, right, right_offset, bottom, bottom_offset, left, left_offset)
+                                            
                                             best_white = white
         #print(best_params)
         puzzle_piece = create_puzzle_piece(cv2.boundingRect(contour), *best_params)
-            
+        params_classified = (best_params[0], best_params[2], best_params[4], best_params[6])
         classified_pieces.append({
             'contour': contour,
-            'classification': best_params
+            'classification': params_classified
         })
+        sort_pieces_into_folder(params_classified, contour, counter, image)
 
         directions = [
             (0, -1), (1, 0), (0, 1), (-1, 0),
@@ -168,4 +170,21 @@ def classify_piece(image):
         counter += 1
 
     print(classified_pieces)
+    return classified_pieces
+
+def sort_pieces_into_folder(params, contour, counter, image):
+    folder_corner_pieces = 'output_corner_pieces'
+    folder_edge_pieces = 'output_edge_pieces'
+    folder_middle_pieces = 'output_center_pieces'
+    zero_count = params.count(0)
+    output_img = np.zeros_like(image)
+    if(zero_count == 2):
+        cv2.drawContours(output_img, contour,  0, 255, cv2.FILLED)
+        cv2.imwrite(os.path.join(folder_corner_pieces, f'corner_piece{counter}.png'), output_img)
+    elif(zero_count == 1):
+        cv2.drawContours(output_img, contour, 0, 255, cv2.FILLED)
+        cv2.imwrite(os.path.join(folder_edge_pieces, f'edge_piece{counter}.png'), output_img)
+    else:
+        cv2.drawContours(output_img, contour,  0, 255, cv2.FILLED)
+        cv2.imwrite(os.path.join(folder_middle_pieces, f'middle_piece{counter}.png'), output_img)
 

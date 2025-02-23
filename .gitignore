@@ -14,3 +14,7 @@ output_intersection/
 output_intersection_mask/
 output_intersection_drawing/
 __pycache__
+output_center_pieces/
+output_edge_pieces/
+output_corner_pieces/
+output_created_piece/
