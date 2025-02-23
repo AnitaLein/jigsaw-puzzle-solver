@@ -1,0 +1,10 @@
+{
+    "files": [
+        "main.py",
+        "contours.py",
+        "corners.py",
+        "intersection.py",
+        "canny_with_filters.py",
+        "piece_classification.py"
+    ]
+}
