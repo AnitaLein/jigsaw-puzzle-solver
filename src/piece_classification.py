@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+from puzzle_types import *
 
 
 def preprocess_image(image, b):
@@ -82,7 +83,7 @@ def create_puzzle_piece(bounding_box, top, top_offset, right, right_offset, bott
 
     return np.array(puzzle_piece, dtype=np.int32)
 
-def classify_piece(image):
+def classify_piece(original, image):
     preprocessed_image = preprocess_image(image, False)
     contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     counter = 0
@@ -124,12 +125,19 @@ def classify_piece(image):
                                             best_white = white
         #print(best_params)
         puzzle_piece = create_puzzle_piece(cv2.boundingRect(contour), *best_params)
-        params_classified = (best_params[0], best_params[2], best_params[4], best_params[6])
-        classified_pieces.append({
-            'contour': contour,
-            'classification': params_classified
-        })
-        sort_pieces_into_folder(params_classified, contour, counter, image)
+        #params_classified = (best_params[0], best_params[2], best_params[4], best_params[6])
+
+        basic_puzzle_piece = BasicPuzzlePiece([])
+        for i in range(0, len(best_params), 2):
+            if best_params[i] == 0:
+                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Gerade, best_params[i+1]))
+            elif best_params[i] == 1:
+                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Nase, best_params[i+1]))
+            elif best_params[i] == -1:
+                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Loch, best_params[i+1]))
+        classified_pieces.append(basic_puzzle_piece)
+        
+        #print(basic_puzzle_piece)
 
         directions = [
             (0, -1), (1, 0), (0, 1), (-1, 0),
@@ -163,13 +171,40 @@ def classify_piece(image):
                 puzzle_piece[point_idx] += best_dir
 
         puzzle_piece += bounding_box[:2]
-        output_folder = 'output_created_piece'
-        output_img = np.zeros_like(image)
-        cv2.drawContours(output_img, [puzzle_piece], 0, 255, cv2.FILLED)
-        cv2.imwrite(os.path.join(output_folder, f'created_piece{counter}.png'), output_img)
+        output_folder = 'output_corners'
+        edge_img = np.zeros_like(original)
+        cv2.drawContours(edge_img, [contour], 0, (255,255,255), 2)
+        
+        # Verschiebung der puzzle_piece auf den Ursprung des Bounding-Box-Koordinatensystems
+        for point in puzzle_piece:
+            point -= bounding_box[:2]
+
+        # extract approximate corners from generated contour
+        corners = []
+        i = 0
+        for edge in basic_puzzle_piece.edges:
+            corners.append(puzzle_piece[i])
+            
+            if edge.type == EdgeType.Gerade:
+                i += 1
+            else:
+                i += 5
+
+        # Slightly move corners diagonally outwards to improve accuracy
+        directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+        corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
+        # Move corners to the nearest contour point
+        for i, corner in enumerate(corners):
+            corner = np.squeeze(corner)  # Ensure it's a flat (2,) array
+            distances = [np.linalg.norm(corner - np.squeeze(p)) for p in contour]  # Flatten contour points
+            nearest_idx = np.argmin(distances)
+            corners[i] = contour[nearest_idx].flatten()
+            #contour in green
+            corner = corners[i]
+            cv2.circle(edge_img, tuple(corner), 10, (0,0,0), cv2.FILLED)
+        cv2.imwrite(os.path.join(output_folder, f'created_piece{counter}.png'), edge_img)
         counter += 1
 
-    print(classified_pieces)
     return classified_pieces
 
 def sort_pieces_into_folder(params, contour, counter, image):
