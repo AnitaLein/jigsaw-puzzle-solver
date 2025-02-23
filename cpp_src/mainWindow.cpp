@@ -238,9 +238,10 @@ std::vector<MainWindow::PuzzlePiece> MainWindow::extractPuzzlePieces(const cv::M
         // find the indices of the nearest contour points
         std::vector<int> cornerIndices;
         for (cv::Point &corner: corners) {
-            auto nearestCorner = std::ranges::min_element(contour, [&corner](const cv::Point &a, const cv::Point &b) {
-                return cv::norm(a - corner) < cv::norm(b - corner);
-            });
+            auto distToCorner = [&corner](const cv::Point &p) {
+                return cv::norm(corner - p);
+            };
+            auto nearestCorner = std::ranges::min_element(contour, {}, distToCorner);
 
             cornerIndices.push_back(nearestCorner - contour.begin());
         }
