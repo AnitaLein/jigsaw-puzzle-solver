@@ -19,10 +19,6 @@ def find_contours(filtered_img):
     # save edge_images in this folder
     output_folder = 'output_edges_contours'
 
-    # delete existing data in the folder
-    files = glob.glob(os.path.join(output_folder, '*.png'))
-    for f in files:
-        os.remove(f)
     # extract and save edges
     for i, cnt in enumerate(filtered_contours):
         # create an empty image and draw the contour
@@ -40,9 +36,6 @@ def split_edges():
     output_folder = 'output_split_edges'
     input_images = glob.glob(os.path.join(input_folder, '*.png'))
 
-    files = glob.glob(os.path.join(output_folder, '*.png'))
-    for f in files:
-        os.remove(f)
     all_contours = []
     for i, image_path in enumerate(input_images):
         edge_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
@@ -93,6 +86,31 @@ def rotate_contour(contours, angle, img, counter ):
     output_filename = os.path.join(output_folder, f'rotated_contour_{counter}.png')
     cv.imwrite(output_filename, output_image)
 
+def rotate_one_specific_contour(cnt, angle, img, counter):
+    output_folder = 'output_rotated_contours'
+    output_image = np.zeros_like(img)
+
+    x, y, w, h = cv.boundingRect(cnt)
+    cv.rectangle(output_image, (x, y), (x+w, y+h), (255,0, 0), 2)  
+
+    # get the center of the bounding box
+    center = (x + w//2, y + h//2)
+
+    # get the rotation matrix
+    M = cv.getRotationMatrix2D(center, angle, 1)
+
+    # rotate the contour
+    rotated_cnt = cv.transform(cnt, M)
+
+    # draw the rotated contour
+    cv.drawContours(output_image, [rotated_cnt], 0, (0, 255, 0), 2)
+    # draw w and h of the bounding box
+    cv.putText(output_image, f'w: {w}', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+    cv.putText(output_image, f'h: {h}', (x, y-30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+    # save the rotated contour
+    output_filename = os.path.join(output_folder, f'rotated_specific_contour_{counter}_rotate{angle}.png')
+    cv.imwrite(output_filename, output_image)
+    return rotated_cnt
 
 def translate_contours(contour, img, counter):
     output_folder = 'output_translated_contours'
