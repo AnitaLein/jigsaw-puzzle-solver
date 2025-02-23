@@ -22,7 +22,7 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 piece_contour = find_contours(bilateral_blur)
 
-classify(img)
+classify_piece(img)
 
 #rotated_pieces = rotate_contour(piece_contour, 45, img, 'output_rotated_contours')
 #translated_pieces = translate_contours(piece_contour, img, 'translated_contours')
