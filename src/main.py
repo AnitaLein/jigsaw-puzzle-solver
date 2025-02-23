@@ -5,7 +5,8 @@ from intersection import *
 from piece_classification import *
 
 
-img = cv.imread('../data/eda_black_merged.jpg', cv2.IMREAD_GRAYSCALE)     
+img = cv.imread('../data/eda_black_merged.jpg')
+gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)     
 assert img is not None, "file could not be read, check with os.path.exists()"
 
 all_output_folders = [
@@ -22,12 +23,12 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 piece_contour = find_contours(bilateral_blur)
 
-classify_piece(img)
-
+basic_classified_pieces = classify_piece(img, gray)
+split_edges(basic_classified_pieces)
 #rotated_pieces = rotate_contour(piece_contour, 45, img, 'output_rotated_contours')
 #translated_pieces = translate_contours(piece_contour, img, 'translated_contours')
-find_corners()
-all_contours = split_edges()
+"""find_corners()
+all_contours = 
 # compare all the contours
 for i in range(0, len(all_contours)): 
     for x in range(0,4):
@@ -54,7 +55,7 @@ for i in range(0, len(all_contours)):
         cv.drawContours(output_img, all_contours[puzzle_piece], -1, (0, 255, 0), 2)
         cv.drawContours(output_img, all_contours[puzzle_piece], puzzle_piece_contour, (255, 0, 0), 2)
         cv.imwrite(os.path.join(output_folder, f'intersection_contours_{i,x}_{puzzle_piece,puzzle_piece_contour}.png'), output_img)
-print("Done")
+print("Done")"""
 
 #calculate_intersection(all_contours[0][0], all_contours[1][0], img)
 
