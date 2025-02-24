@@ -35,7 +35,7 @@ for x in range(0, len(puzzle_pieces)):
         matching_puzzle_piece = -1
         matching_index = -1
 
-        for y in range(x,len(puzzle_pieces)):
+        for y in range(0,len(puzzle_pieces)):
             puzzle_piece2 = puzzle_pieces[y]    
             for j in range(0, 4):
                 edge1 = puzzle_piece1.edges[i]
@@ -48,7 +48,11 @@ for x in range(0, len(puzzle_pieces)):
                     best_fit = intersection_area
                     matching_puzzle_piece = y
                     matching_index = j
-        print(f'Best fit for {i} is {matching_index} {best_fit}')
+            if matching_index == -1:
+                continue
+        if matching_puzzle_piece == -1:
+            continue
+        print(f'Best fit for {x,i} is {matching_puzzle_piece,matching_index} {best_fit}')
         #draw the puzzles that intersect
         output_folder = 'output_intersection_drawing'
         output_img = np.zeros_like(img)
@@ -64,7 +68,7 @@ for x in range(0, len(puzzle_pieces)):
         cv.polylines(output_img, [np.array(puzzle_pieces[matching_puzzle_piece].edges[matching_index].points)], False, (0, 255, 0), 2)
 
         #cv.drawContours(output_img, puzzle_piece2.edges,  edge_index, (255, 0, 0), 2)
-        cv.imwrite(os.path.join(output_folder, f'intersection_contours_{i}_{matching_index}.png'), output_img)
+        cv.imwrite(os.path.join(output_folder, f'intersection_contours_{x,i}_{matching_puzzle_piece,matching_index}.png'), output_img)
 
         print("done")
 

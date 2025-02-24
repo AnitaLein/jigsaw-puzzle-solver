@@ -55,8 +55,8 @@ def calculate_intersection(cnt1, cnt2, img, i, j, x, y):
     #generate mask for the two contours
     mask1 = np.zeros_like(img)
     mask2 = np.zeros_like(img)
-    cv.drawContours(mask1, [cnt1], -1, (255, 255, 255), -1)
-    cv.drawContours(mask2, [cnt2], -1, (255, 255, 255), -1)
+    cv.polylines(mask1, [cnt1], False, (255, 255, 255), 2)
+    cv.polylines(mask2, [cnt2], False, (255, 255, 255), 2)
 
     # find the intersection of the two contours
     intersection = cv.bitwise_and(mask1, mask2)
