@@ -4,14 +4,17 @@ import os
 
 from numpy import shape
 from puzzle_types import *
+from scipy.spatial import cKDTree
 
 
 def find_matches_closest(a, b, transform):
-    matches = []
-    for point_b in b:
-        point_b_transformed = transform(point_b.squeeze())  # Ensure (2,)
-        closest_point = min(a, key=lambda p: np.linalg.norm(point_b_transformed - p.squeeze()))
-        matches.append((closest_point.squeeze(), point_b.squeeze()))
+    b_transformed = np.array([transform(p.squeeze()) for p in b])
+    a_points = np.array([p.squeeze() for p in a])
+
+    tree = cKDTree(a_points)
+    _, indices = tree.query(b_transformed)
+
+    matches = [(a_points[idx], b.squeeze()) for idx, b in zip(indices, b)]
     return matches
 
 
@@ -100,29 +103,29 @@ def edge_matching(puzzle_pieces):
             match.originalEdge = x
             match.matchingEdge = best_edge_index
             puzzle_pieces[i].matches.append(match)
+        
     return puzzle_pieces
 
 def compute_similarity_matrix(puzzle_pieces):
     similarity_matrix = []
 
-    for puzzle_piece_a in puzzle_pieces:
-        for i in range(4):
+    for i in range(len(puzzle_pieces)):
+        for x in range(4):
             similarities = []
 
-            for puzzle_piece_b in puzzle_pieces:
-                for j in range(4):
+            for j in range(len(puzzle_pieces)):
+                for y in range(4):
                     # Check edge continuity
-                    if ((puzzle_piece_a.edges[(i + 1) % 4].type == EdgeType.Gerade) != 
-                        (puzzle_piece_b.edges[(j + 3) % 4].type == EdgeType.Gerade) or
-                        (puzzle_piece_a.edges[(i + 3) % 4].type == EdgeType.Gerade) != 
-                        (puzzle_piece_b.edges[(j + 1) % 4].type == EdgeType.Gerade)):
+                    if ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Gerade) != 
+                        (puzzle_pieces[j].edges[(y + 3) % 4].type == EdgeType.Gerade) or
+                        (puzzle_pieces[i].edges[(x + 3) % 4].type == EdgeType.Gerade) != 
+                        (puzzle_pieces[j].edges[(y + 1) % 4].type == EdgeType.Gerade)):
                         similarity = float("inf")
                     else:
-                        # Ensure reflexivity
-                        similarity = (compare_edges(puzzle_piece_a.edges[i], puzzle_piece_b.edges[j]) + 
-                                      compare_edges(puzzle_piece_b.edges[j], puzzle_piece_a.edges[i]))
+                        similarity = compare_edges(puzzle_pieces[i].edges[x], puzzle_pieces[j].edges[y])
 
                     similarities.append(similarity)
+            
 
             similarity_matrix.append(similarities)
         
