@@ -75,5 +75,29 @@ def compare_edges(a, b):
                 return sum_sq_dist
     
     sum_sq_dist = sum(np.linalg.norm(m[0] - transform(m[1]))**2 for m in matches)
-    print(sum_sq_dist)
     return sum_sq_dist
+
+def edge_matching(puzzle_pieces):
+   
+    for i in range(0, len(puzzle_pieces)):
+        for x in range(0, 4):
+            match = Match(0,None,0,0)
+            best_sqr = float('inf')
+            if puzzle_pieces[i].edges[x].type == EdgeType.Gerade:
+                continue
+            for j in range(i + 1, len(puzzle_pieces)):
+                for y in range(0, 4):
+                    if  puzzle_pieces[j].edges[y].type == EdgeType.Gerade or puzzle_pieces[i].edges[x].type == puzzle_pieces[j].edges[y].type:
+                        continue
+                    sum_sqr= compare_edges(puzzle_pieces[i].edges[x], puzzle_pieces[j].edges[y])
+                    if sum_sqr < best_sqr:
+                        best_sqr = sum_sqr
+                        best_piece_index = j
+                        best_edge_index = y
+            
+            match.matching_piece = best_piece_index
+            match.matching_edge = puzzle_pieces[best_piece_index].edges[best_edge_index]
+            match.originalEdge = x
+            match.matchingEdge = best_edge_index
+            puzzle_pieces[i].matches.append(match)
+    return puzzle_pieces

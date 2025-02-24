@@ -11,6 +11,11 @@ class EdgeType(Enum):
     Nase = "Nase"
     Loch = "Loch"
 
+class PieceType(Enum):
+    Corner = "Corner"
+    Edge = "Edge"
+    Center = "Center"
+
 # Define the BasicEdge class
 @dataclass
 class BasicEdge:
@@ -29,8 +34,21 @@ class Edge:
     points: List[np.ndarray]  # List of points as np.array (cv2.Point2d equivalent)
 
 @dataclass
+class Match:
+    matching_piece: int
+    matching_edge: Edge
+    originalEdge: int
+    matchingEdge: int
+
+@dataclass
 class PuzzlePiece:
-    edges: List[Edge]  # List of Edge objects
+    number: int
+    type: PieceType
+    edges: List[Edge] 
+    matches: List[Match] # List of Edge objects
+
+
+
 
 @dataclass
 

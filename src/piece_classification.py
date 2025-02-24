@@ -197,7 +197,7 @@ def classify_piece(original, image):
         # slightly move corners diagonally outwards to improve accuracy
         directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
         corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
-        puzzle_piece = PuzzlePiece([])
+        puzzle_piece = PuzzlePiece(None, None, [], [])
 
         # find the indices of the nearest contour points
         corner_indices = []
@@ -207,6 +207,7 @@ def classify_piece(original, image):
             corner_indices.append(nearest_corner)
 
         # split contour into edges
+        edge_counter = 0
         for i in range(4):
             start_idx = corner_indices[i]
             end_idx = corner_indices[(i + 1) % 4]
@@ -221,6 +222,7 @@ def classify_piece(original, image):
 
             type = basic_puzzle_piece.edges[i].type
             if type == EdgeType.Gerade:
+                edge_counter += 1
                 color = (0, 255, 255)
             elif type == EdgeType.Nase:
                 color = (0, 255, 0)
@@ -230,6 +232,14 @@ def classify_piece(original, image):
             cv2.polylines(edge_img, [np.array(edge_points)], False, color, 2)
             split_edge = Edge(type, edge_points)
             puzzle_piece.edges.append(split_edge)
+
+        if edge_counter == 1:
+            puzzle_piece.type = PieceType.Edge
+        elif edge_counter == 2:
+            puzzle_piece.type = PieceType.Corner
+        else:
+            puzzle_piece.type = PieceType.Center
+        puzzle_piece.number = counter
         puzzle_pieces.append(puzzle_piece)
         # draw corners
         for i in range(len(corner_indices)):

@@ -22,37 +22,17 @@ for folder in all_output_folders:
 
 bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
-piece_contour = find_contours(bilateral_blur)
-
+#piece_contour = find_contours(bilateral_blur)
 
 puzzle_pieces = classify_piece(img, gray)
-x,y = 0,0
-for piece1 in puzzle_pieces:
-    for i in range(0, 4):
-        for piece2 in puzzle_pieces:
-            if x == y:
-                continue
-            for j in range(0, 4):
-                if piece1.edges[i].type == EdgeType.Gerade or piece2.edges[j].type == EdgeType.Gerade or piece1.edges[i].type == piece2.edges[j].type:
-                    continue
-                output_img = np.zeros_like(img)
-                compare_edges(piece1.edges[i], piece2.edges[j])
-                cv.polylines(output_img, [np.array(piece1.edges[0].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece1.edges[1].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece1.edges[2].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece1.edges[3].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece1.edges[i].points)], False, (255, 0, 0), 2)
-                cv.polylines(output_img, [np.array(piece2.edges[0].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece2.edges[1].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece2.edges[2].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece2.edges[3].points)], False, (0, 255, 0), 2)
-                cv.polylines(output_img, [np.array(piece2.edges[j].points)], False, (255, 0, 0), 2)
-                cv.imwrite(os.path.join('output_intersection', f'edges_contours_{x,i}_{y,j}.png'), output_img)
-            y += 1
-    x += 1
+print('classfication done')
+puzzle_pieces= edge_matching(puzzle_pieces)
+print(puzzle_pieces)
+
+
     
 
-    print('done')
+    #print('done')
 """for x in range(0, len(puzzle_pieces)): 
     for i in range(0, 4):
         puzzle_piece1 = puzzle_pieces[x]
