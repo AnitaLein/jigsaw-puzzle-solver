@@ -33,17 +33,20 @@ class PuzzlePiece:
     edges: List[Edge]  # List of Edge objects
 
 @dataclass
+
 class Transform:
-    def __init__(self, t=None, w=0.0):
-        self.t = np.array(t if t is not None else [0.0, 0.0])
+    def __init__(self, t=np.array([0.0, 0.0]), w=0.0):
+        self.t = np.array(t, dtype=np.float64)
         self.w = w
     
     def __eq__(self, other):
-        return np.allclose(self.t, other.t) and math.isclose(self.w, other.w)
+        return np.allclose(self.t, other.t) and np.isclose(self.w, other.w)
     
     def __call__(self, p):
-        x, y = p
-        return[
-            x * math.cos(self.w) - y * math.sin(self.w) + self.t[0],
-            x * math.sin(self.w) + y * math.cos(self.w) + self.t[1]
-        ]
+        p = np.squeeze(p)  # Ensure p is a 1D array of shape (2,)
+        cos_w, sin_w = np.cos(self.w), np.sin(self.w)
+        return np.array([
+            p[0] * cos_w - p[1] * sin_w + self.t[0],
+            p[0] * sin_w + p[1] * cos_w + self.t[1]
+        ])
+

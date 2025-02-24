@@ -9,96 +9,71 @@ from puzzle_types import *
 def find_matches_closest(a, b, transform):
     matches = []
     for point_b in b:
-        print(len(np.array(point_b[0])))
-        print(np.array(point_b[0]).shape())
-        print(np.array(point_b.shape()))
-        point_b_transformed = transform(np.array(point_b[0]))
-        
-        # Calculate the distances and find the closest point in 'a'
-        distances = [np.linalg.norm(np.array(point_b_transformed) - np.array(point_a)) for point_a in a]
-        closest_index = np.argmin(distances)
-        matches.append((a[closest_index], point_b))
-    
+        point_b_transformed = transform(point_b.squeeze())  # Ensure (2,)
+        closest_point = min(a, key=lambda p: np.linalg.norm(point_b_transformed - p.squeeze()))
+        matches.append((closest_point.squeeze(), point_b.squeeze()))
     return matches
 
 
-def find_transformation_lsq(matches):
-    transform = Transform()
-    
-    if not matches or len(matches) < 2:
-        raise ValueError("Not enough matches for transformation")
-    
-    a_points = np.array([np.asarray(match[0], dtype=np.float64).flatten() for match in matches])
-    b_points = np.array([np.asarray(match[1], dtype=np.float64).flatten() for match in matches])
-    
-    if a_points.shape[1] != 2 or b_points.shape[1] != 2:
-        raise ValueError("Invalid match dimensions: Expected 2D points")
+def find_transformation_LSQ(matches):
+
+    if not matches:
+        return Transform()
+
+    a_points = np.array([m[0] for m in matches])
+    b_points = np.array([m[1] for m in matches])
     
     a_mean = np.mean(a_points, axis=0)
     b_mean = np.mean(b_points, axis=0)
     
     s_xx = s_yy = s_xy = s_yx = 0.0
-    
     for a, b in matches:
-        a = np.asarray(a, dtype=np.float64).flatten()
-        b = np.asarray(b, dtype=np.float64).flatten()
-        s_xx += (b[0] - b_mean[0]) * (a[0] - a_mean[0])
-        s_yy += (b[1] - b_mean[1]) * (a[1] - a_mean[1])
-        s_xy += (b[0] - b_mean[0]) * (a[1] - a_mean[1])
-        s_yx += (b[1] - b_mean[1]) * (a[0] - a_mean[0])
+        a = np.squeeze(a)
+        b = np.squeeze(b)
+        
+        if a.shape != (2,) or b.shape != (2,):  # Ensure correct shape
+            raise ValueError(f"Unexpected point shape: a={a.shape}, b={b.shape}")
+        
+        dx_a, dy_a = a - a_mean
+        dx_b, dy_b = b - b_mean
+        
+        s_xx += dx_b * dx_a
+        s_yy += dy_b * dy_a
+        s_xy += dx_b * dy_a
+        s_yx += dy_b * dx_a
     
-    transform.w = math.atan2(s_xy - s_yx, s_xx + s_yy)
-    transform.t = a_mean - np.array([
-        b_mean[0] * math.cos(transform.w) - b_mean[1] * math.sin(transform.w),
-        b_mean[0] * math.sin(transform.w) + b_mean[1] * math.cos(transform.w)
+    w = np.arctan2(s_xy - s_yx, s_xx + s_yy)
+    rotation_matrix = np.array([
+        [np.cos(w), -np.sin(w)], 
+        [np.sin(w), np.cos(w)]
     ])
     
-    return transform
+    t = a_mean - np.dot(rotation_matrix, b_mean)
+    
+    return Transform(t, w)
+
 
 def compare_edges(a, b):
-    global n
-    n = getattr(compare_edges, 'n', 0)
-    
-    if a.type == b.type or a.type == "Flat" or b.type == "Flat":
+    if a.type == b.type or a.type == 'Flat' or b.type == 'Flat':
         return float('inf')
     
-    transform = find_transformation_lsq([(a.points[0], b.points[-1]), (a.points[-1], b.points[0])])
+    transform = find_transformation_LSQ([
+        (np.squeeze(a.points[0]), np.squeeze(b.points[-1])),
+        (np.squeeze(a.points[-1]), np.squeeze(b.points[0]))
+    ])
     
     for i in range(10):
         matches = find_matches_closest(a.points, b.points, transform)
-        
-        if not matches:
-            return float('inf')
-        
-        new_transform = find_transformation_lsq(matches)
-        
+        new_transform = find_transformation_LSQ(matches)
         if new_transform == transform and i > 0:
             break
-        
         transform = new_transform
         
         if i == 0:
-            sum_sq = sum(np.linalg.norm(np.asarray(m[0]) - transform(np.asarray(m[1])))**2 for m in matches)
-            if sum_sq > 10_000:
-                return sum_sq
+            sum_sq_dist = sum(np.linalg.norm(m[0] - transform(m[1]))**2 for m in matches)
+            if sum_sq_dist > 10_000:
+                return sum_sq_dist
     
-    sum_sq = sum(np.linalg.norm(np.asarray(m[0]) - transform(np.asarray(m[1])))**2 for m in matches)
-    
-    if 2500 < sum_sq < 3000:
-        image = np.zeros((600, 600, 3), dtype=np.uint8)
-        for i in range(len(a.points) - 1):
-            cv2.line(image, tuple(a.points[i]), tuple(a.points[i + 1]), (0, 255, 0), 1)
-        for i in range(len(b.points) - 1):
-            cv2.line(image, tuple(transform(b.points[i])), tuple(transform(b.points[i + 1])), (0, 0, 255), 1)
-        cv2.imwrite(f"eda2/match_{n}.png", image)
-        
-        image = np.zeros((600, 600, 3), dtype=np.uint8)
-        for i in range(len(a.points) - 1):
-            cv2.line(image, tuple(a.points[i]), tuple(a.points[i + 1]), (0, 255, 0), 1)
-        for i in range(len(b.points) - 1):
-            cv2.line(image, tuple(transform(b.points[i]) + np.array([0, 50])), tuple(transform(b.points[i + 1]) + np.array([0, 50])), (0, 0, 255), 1)
-        cv2.imwrite(f"eda2/match_offset_{n}.png", image)
-        
-        n += 1
-    
-    return sum_sq
+    sum_sq_dist = sum(np.linalg.norm(m[0] - transform(m[1]))**2 for m in matches)
+    print(sum_sq_dist)
+    return sum_sq_dist
