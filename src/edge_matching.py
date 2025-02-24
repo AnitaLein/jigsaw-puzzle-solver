@@ -5,6 +5,7 @@ import os
 from numpy import shape
 from puzzle_types import *
 from scipy.spatial import cKDTree
+import csv
 
 
 def find_matches_closest(a, b, transform):
@@ -128,7 +129,9 @@ def compute_similarity_matrix(puzzle_pieces):
             
 
             similarity_matrix.append(similarities)
-        
-        print(".", end="", flush=True)
+            print(".", end="", flush=True)
+    with open('similarity_matrix', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(similarity_matrix)
 
     return np.array(similarity_matrix)
