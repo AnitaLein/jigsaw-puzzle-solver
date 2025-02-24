@@ -103,7 +103,7 @@ def rotate_one_specific_contour(cnt, angle, img, counter):
     rotated_cnt = cv.transform(cnt, M)
 
     # draw the rotated contour
-    cv.drawContours(output_image, [rotated_cnt], 0, (0, 255, 0), 2)
+    cv.polylines(output_image, [rotated_cnt], False, (0, 255, 0), 2)
     # draw w and h of the bounding box
     cv.putText(output_image, f'w: {w}', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     cv.putText(output_image, f'h: {h}', (x, y-30), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)

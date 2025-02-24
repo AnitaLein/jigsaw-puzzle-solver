@@ -5,19 +5,14 @@ import os
 from numpy import shape
 from puzzle_types import *
 
-"""
-def find_matches_closest(a, b, transform):
-    matches = []
-    for aPoint in a:
-        for bPoint in b:
-            transformed = transform(aPoint)
-            distance = np.linalg.norm(bPoint - transformed)
-            matches.append(Match(aPoint, bPoint, distance))"""
 
 def find_matches_closest(a, b, transform):
     matches = []
     for point_b in b:
-        point_b_transformed = transform(point_b)
+        print(len(np.array(point_b[0])))
+        print(np.array(point_b[0]).shape())
+        print(np.array(point_b.shape()))
+        point_b_transformed = transform(np.array(point_b[0]))
         
         # Calculate the distances and find the closest point in 'a'
         distances = [np.linalg.norm(np.array(point_b_transformed) - np.array(point_a)) for point_a in a]

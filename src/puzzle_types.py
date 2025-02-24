@@ -43,7 +43,7 @@ class Transform:
     
     def __call__(self, p):
         x, y = p
-        return np.array([
+        return[
             x * math.cos(self.w) - y * math.sin(self.w) + self.t[0],
             x * math.sin(self.w) + y * math.cos(self.w) + self.t[1]
-        ])
+        ]

@@ -9,16 +9,16 @@ def filter_contour_intersection(cnt1, cnt2, img, i , j, x , y):
     output_folder = 'output_intersection'
     output_img = np.zeros_like(img)
 
-    center_cnt1 = translate_one_specific_contour(cnt1, img, 1)
-    center_cnt2 = translate_one_specific_contour(cnt2, img, 2)
+    center_cnt1 = np.array(translate_one_specific_contour(np.array(cnt1), img, 1))
+    center_cnt2 = np.array(translate_one_specific_contour(np.array(cnt2), img, 2))
 
     # draw bounding boxes
     x1, y1, w1, h1 = cv.boundingRect(center_cnt1)
     x2, y2, w2, h2 = cv.boundingRect(center_cnt2)
 
     # draw bounding boxes
-    cv.drawContours(output_img, [center_cnt1], -1, (0, 255, 0), 2)
-    cv.drawContours(output_img, [center_cnt2], -1, (0, 255, 0), 2)
+    cv.polylines(output_img, [center_cnt1], False, (0, 255, 0), 2)
+    cv.polylines(output_img, [center_cnt2], False, (0, 255, 0), 2)
     cv.rectangle(output_img, (x1, y1), (x1+w1, y1+h1), (255, 0, 0), 2)
     cv.rectangle(output_img, (x2, y2), (x2+w2, y2+h2), (255, 0, 0), 2)
     output_filename = os.path.join(output_folder, f'intersection_contours_{i,x}_{j,y}.png')
