@@ -26,9 +26,10 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 
 puzzle_pieces = classify_piece(img, gray)
 print('classfication done')
-puzzle_pieces= edge_matching(puzzle_pieces)
-print(puzzle_pieces)
-
+#puzzle_pieces= edge_matching(puzzle_pieces)
+#print(puzzle_pieces)
+matrix = compute_similarity_matrix(puzzle_pieces)
+print(matrix)
 
     
 

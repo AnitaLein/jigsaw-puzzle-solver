@@ -101,3 +101,31 @@ def edge_matching(puzzle_pieces):
             match.matchingEdge = best_edge_index
             puzzle_pieces[i].matches.append(match)
     return puzzle_pieces
+
+def compute_similarity_matrix(puzzle_pieces):
+    similarity_matrix = []
+
+    for puzzle_piece_a in puzzle_pieces:
+        for i in range(4):
+            similarities = []
+
+            for puzzle_piece_b in puzzle_pieces:
+                for j in range(4):
+                    # Check edge continuity
+                    if ((puzzle_piece_a.edges[(i + 1) % 4].type == EdgeType.Gerade) != 
+                        (puzzle_piece_b.edges[(j + 3) % 4].type == EdgeType.Gerade) or
+                        (puzzle_piece_a.edges[(i + 3) % 4].type == EdgeType.Gerade) != 
+                        (puzzle_piece_b.edges[(j + 1) % 4].type == EdgeType.Gerade)):
+                        similarity = float("inf")
+                    else:
+                        # Ensure reflexivity
+                        similarity = (compare_edges(puzzle_piece_a.edges[i], puzzle_piece_b.edges[j]) + 
+                                      compare_edges(puzzle_piece_b.edges[j], puzzle_piece_a.edges[i]))
+
+                    similarities.append(similarity)
+
+            similarity_matrix.append(similarities)
+        
+        print(".", end="", flush=True)
+
+    return np.array(similarity_matrix)
