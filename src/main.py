@@ -31,7 +31,7 @@ grid = [[None for _ in range(len(puzzle_pieces))] for _ in range(len(puzzle_piec
 similarity_matrix= compute_similarity_matrix(puzzle_pieces)
 corner_pieces = load_puzzle_pieces_from_csv('corner_pieces')
 #grid = solvePuzzle(puzzle_pieces, similarity_matrix, corner_pieces)
-grid, connected_pieces = place_corner_pieces(grid, corner_pieces, puzzle_pieces)
+grid, connected_pieces = place_corner_piece(grid, corner_pieces, puzzle_pieces)
 place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces)
 save_grid_to_csv(grid)
 print('done')

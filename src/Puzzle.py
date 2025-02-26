@@ -5,7 +5,7 @@ from csv_saving import load_puzzle_pieces_from_csv
 from puzzle_types import EdgeType
 
 
-def place_corner_pieces(grid, corner_pieces, puzzle_pieces):
+def place_corner_piece(grid, corner_pieces, puzzle_pieces):
 
     grid_size = len(grid)
     rotation = -1
@@ -25,28 +25,7 @@ def place_corner_pieces(grid, corner_pieces, puzzle_pieces):
             print(rotation)
             save_puzzle_piece_to_grid(grid, corner_pieces[i], rotation, 0, 0)
             connected_pieces.append(index)
-        elif i == 1:  # Top-right (0, N-1)
-            #add 1 to all elements in list
-            straight_edges[0] = (straight_edges[0] + 1) % 4
-            straight_edges[1] = (straight_edges[1] + 1) % 4
-            rotation = corner_rotation(straight_edges)
-            save_puzzle_piece_to_grid(grid, corner_pieces[i], rotation, 0, grid_size - 1)
-            connected_pieces.append(index)
-
-        elif i == 2:  # Bottom-left (N-1, 0)
-            straight_edges[0] = (straight_edges[0] + 3) % 4
-            straight_edges[1] = (straight_edges[1] + 3) % 4
-            rotation = corner_rotation(straight_edges)
-            save_puzzle_piece_to_grid(grid, corner_pieces[i], rotation, grid_size - 1,0)
-            connected_pieces.append(index)
-
-        elif i == 3:  # Bottom-right (N-1, N-1)
-            straight_edges[0] = (straight_edges[0] + 2) % 4
-            straight_edges[1] = (straight_edges[1] + 2) % 4
-            rotation = corner_rotation(straight_edges)
-            save_puzzle_piece_to_grid(grid, corner_pieces[i], rotation, grid_size - 1, grid_size - 1)
-            connected_pieces.append(index)
-
+        
     return grid, connected_pieces
 
 def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces):
@@ -61,28 +40,32 @@ def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces):
         for best_match in match_result:
             match_piece_i = best_match[1] // 4
             match_piece = puzzle_pieces[match_piece_i]
-
+            
             if match_piece.number in connected_pieces:
                 print("Piece already connected")
                 continue
-
+                
             else:
                 new_index = (edge_index - int(rotation)) % 4
+                print('new index', new_index)
+                print(new_index)
                 if new_index == 0:
-                    rotation = piece_rotation(best_match[1] % 4, new_index)
+                    '''rotation = piece_rotation(best_match[1] % 4, new_index)
                     grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row, col - 1)
-                    print(edge_index)
-                if new_index == 1:
+                    print(edge_index)'''
+                    continue
+                elif new_index == 1:
                     rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row + 1 , col)
-                    print(edge_index)
+                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row , col + 1)
+                    break
                 elif new_index == 2:
                     rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row, col + 1)
-                    print(edge_index)
+                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row + 1, col)
+                    break
                 elif new_index == 3:
-                    rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row - 1, col)
+                    '''rotation = piece_rotation(best_match[1] % 4, new_index)
+                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row - 1, col)'''
+                    continue
                 connected_pieces.append(match_piece.number) 
         else:
             print("No match found")
@@ -90,18 +73,18 @@ def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces):
     # Step 1: Start at (0,0) and extend right and down
     top_left_piece, top_left_rotation = grid[0][0]
     top_left_piece = int(top_left_piece)
-
-    # Find and place the best matching edge piece for the right side of (0,0)
-    place_piece(grid, 0, 0 , top_left_piece, 0, top_left_rotation)   # Right edge of (0,0)
-    place_piece(grid, 0, 0 , top_left_piece, 3, top_left_rotation) 
+    for x in range(4):
+        place_piece(grid, 0, 0, top_left_piece, x, top_left_rotation)
     
     current_piece, current_rotation = grid[0][1]
-    current_piece = int(current_piece)
-    #place_piece(grid, 0, 1 , current_piece, 0, current_rotation)
-    place_piece(grid, 0, 1 , current_piece, 1, current_rotation)
-    place_piece(grid, 0, 1 , current_piece, 2, current_rotation)
-    place_piece(grid, 0, 1 , current_piece, 3, current_rotation)
-    print(connected_pieces)
+    for x in range(4):
+        place_piece(grid, 0, 1, current_piece, x, current_rotation) 
+    
+    current_piece2, current_rotation2 = grid[0][2]
+    for x in range(4):
+        place_piece(grid, 0, 1, current_piece2, x, current_rotation2) 
+    
+    
 
     return grid
 
