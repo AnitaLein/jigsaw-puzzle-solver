@@ -19,3 +19,6 @@ output_edge_pieces/
 output_corner_pieces/
 output_created_piece/
 similarity_matrix
+puzzle_grid
+border_pieces
+corner_pieces

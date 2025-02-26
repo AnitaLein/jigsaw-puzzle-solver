@@ -116,8 +116,10 @@ def compute_similarity_matrix(puzzle_pieces):
 
             for j in range(len(puzzle_pieces)):
                 for y in range(4):
+                    if(puzzle_pieces[i].edges[x].type == EdgeType.Gerade or puzzle_pieces[j].edges[y].type == EdgeType.Gerade):
+                        similarity = float("inf")
                     # Check edge continuity
-                    if ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Gerade) != 
+                    elif ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Gerade) != 
                         (puzzle_pieces[j].edges[(y + 3) % 4].type == EdgeType.Gerade) or
                         (puzzle_pieces[i].edges[(x + 3) % 4].type == EdgeType.Gerade) != 
                         (puzzle_pieces[j].edges[(y + 1) % 4].type == EdgeType.Gerade)):

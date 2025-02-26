@@ -1,6 +1,8 @@
+import csv
 import os
 import cv2
 import numpy as np
+from csv_saving import *
 from puzzle_types import *
 
 
@@ -94,6 +96,8 @@ def classify_piece(original, image):
     counter = 0
 
     puzzle_pieces = []
+    corner_pieces = []
+    border_pieces = []
 
     for contour in contours:
         bounding_box = cv2.boundingRect(contour)
@@ -197,7 +201,7 @@ def classify_piece(original, image):
         # slightly move corners diagonally outwards to improve accuracy
         directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
         corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
-        puzzle_piece = PuzzlePiece(None, None, [], [])
+        puzzle_piece = PuzzlePiece(None, None, [])
 
         # find the indices of the nearest contour points
         corner_indices = []
@@ -235,19 +239,18 @@ def classify_piece(original, image):
 
         if edge_counter == 1:
             puzzle_piece.type = PieceType.Edge
+            border_pieces.append(puzzle_piece)
         elif edge_counter == 2:
             puzzle_piece.type = PieceType.Corner
+            corner_pieces.append(puzzle_piece)
         else:
             puzzle_piece.type = PieceType.Center
         puzzle_piece.number = counter
         puzzle_pieces.append(puzzle_piece)
-        # draw corners
-        for i in range(len(corner_indices)):
-            cv2.circle(edge_img, tuple(contour[corner_indices[i]][0]), 5, (255, 0, 0), cv2.FILLED)
 
-        cv2.imwrite(os.path.join(output_folder, f'created_piece{counter}.png'), edge_img)
         counter += 1
-
-
+    
+    save_puzzle_pieces_to_csv(corner_pieces, 'corner_pieces')
+    save_puzzle_pieces_to_csv(border_pieces, 'border_pieces')
     return puzzle_pieces
 

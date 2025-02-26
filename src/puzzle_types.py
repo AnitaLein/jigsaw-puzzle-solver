@@ -1,9 +1,11 @@
 from enum import Enum
 from dataclasses import dataclass
+from ibm_db import num_rows
 import numpy as np
 import math
 import cv2
-from typing import List, Tuple
+from typing import List, Tuple, Dict
+
 
 # Define the EdgeType class
 class EdgeType(Enum):
@@ -33,21 +35,12 @@ class Edge:
     type: EdgeType
     points: List[np.ndarray]  # List of points as np.array (cv2.Point2d equivalent)
 
-@dataclass
-class Match:
-    matching_piece: int
-    matching_edge: Edge
-    originalEdge: int
-    matchingEdge: int
 
 @dataclass
 class PuzzlePiece:
     number: int
     type: PieceType
-    edges: List[Edge] 
-    matches: List[Match] # List of Edge objects
-
-
+    edges: List[Edge]  # List of Edge objects
 
 
 @dataclass

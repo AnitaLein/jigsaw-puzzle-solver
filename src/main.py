@@ -1,4 +1,6 @@
 import cv2 as cv
+from Puzzle import *
+from arrange_pieces import *
 from contours import *
 from corners import *
 from intersection import *
@@ -25,11 +27,22 @@ bilateral_blur = cv.bilateralFilter(img, 9, 75, 75)
 #piece_contour = find_contours(bilateral_blur)
 
 puzzle_pieces = classify_piece(img, gray)
+grid = [[None for _ in range(len(puzzle_pieces))] for _ in range(len(puzzle_pieces))]
+similarity_matrix= compute_similarity_matrix(puzzle_pieces)
+corner_pieces = load_puzzle_pieces_from_csv('corner_pieces')
+#grid = solvePuzzle(puzzle_pieces, similarity_matrix, corner_pieces)
+grid, connected_pieces = place_corner_pieces(grid, corner_pieces, puzzle_pieces)
+place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces)
+save_grid_to_csv(grid)
+print('done')
+
+
+#arrange(puzzle_pieces, similarity_matrix, corner_pieces)
 print('classfication done')
 #puzzle_pieces= edge_matching(puzzle_pieces)
 #print(puzzle_pieces)
-matrix = compute_similarity_matrix(puzzle_pieces)
-print(matrix)
+#matrix = compute_similarity_matrix(puzzle_pieces)
+#print(matrix)
 
     
 
