@@ -1,8 +1,10 @@
 
 
-from arrange_pieces import *
-from csv_saving import load_puzzle_pieces_from_csv
+#from arrange_pieces import *
+from csv_saving import *
 from puzzle_types import EdgeType
+from puzzle_types import *
+import csv
 
 
 def place_corner_piece(grid, corner_pieces, puzzle_pieces):
@@ -71,46 +73,80 @@ def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces, 
     
         else:
             print("No suitable match found")
-    
+
+    end_of_row = 0
+    end_of_col = 0
+
     # Place the first row
     for i in range(grid_size):
         if grid[0][i] is None:
+            end_of_row += i - 1 
             break
         current_piece, current_rotation = grid[0][i]
         current_piece = int(current_piece)
         
         for x in range(4):
-            place_piece(grid, 0, i, current_piece, x, current_rotation, is_row=True)
+            piece = puzzle_pieces[current_piece]
+            match_results = get_matches(piece, x, similarity_matrix)
     
     # Place the first column
     for i in range(grid_size):
         if grid[i][0] is None:
+            end_of_col += i - 1
             break
         current_piece, current_rotation = grid[i][0]
         current_piece = int(current_piece)
         
         for x in range(4):
             place_piece(grid, i, 0, current_piece, x, current_rotation, is_row=False)
+    
     #place last row
-    '''for i in range(3):
+    for i in range(end_of_row):
+        print('grid' , grid[end_of_col][i], end_of_row, end_of_col)
         if grid[end_of_col][i] == None:
             break
-        current_piece2, current_rotation2 = grid[end_of_col][i]
-        current_piece2 = int(current_piece2)
+        current_piece, current_rotation = grid[end_of_col][i]
+        current_piece = int(current_piece)
+        
         for x in range(4):
-            place_row_piece(grid, end_of_col, i, current_piece2, x, current_rotation2)
+            place_piece(grid, end_of_col, i, current_piece, x, current_rotation, is_row=True)
     
     #place last column
-    for i in range(3):
+    for i in range(end_of_col):
+        print('grid' , grid[i][end_of_row], end_of_row, end_of_col)
         if grid[i][end_of_row] == None:
             break
-        current_piece2, current_rotation2 = grid[i][end_of_row]
-        current_piece2 = int(current_piece2)
+        current_piece, current_rotation = grid[i][end_of_row]
+        current_piece = int(current_piece)
+
         for x in range(4):
-            place_column_piece(grid, i, end_of_row, current_piece2, x, current_rotation2)'''
+            place_piece(grid, i, end_of_row, current_piece, x, current_rotation, is_row=False)
         
         
     return grid
+
+def place_center_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces, rotated_pieces):
+    grid_size = len(grid)
+
+    for j in range(grid_size):
+        for i in range(grid_size):
+            if grid[j][i] is not None and grid[j - 1][i + 1] is not None:
+                left_piece, left_rotation = grid[j][i]
+                top_piece, top_rotation = grid[j - 1][i + 1]
+                for x in range(4):
+                    left_piece = puzzle_pieces[left_piece]
+                    top_piece = puzzle_pieces[top_piece]
+                    left_match_results = get_matches(left_piece, x, similarity_matrix)
+                    top_match_results = get_matches(top_piece, x, similarity_matrix)
+
+                    left_match_results = [x[1] // 4 for x in left_match_results]
+                    top_match_results = [x[1] // 4 for x in top_match_results]
+
+                    # if there is an element in left_match_results and in top_match_results
+                    
+
+
+                    
 
     
 def rotate_piece(piece, rotation):
@@ -134,3 +170,27 @@ def corner_rotation(a):
 def piece_rotation(a, b):
     return (a - b + 2) % 4
 
+
+def find_best_match(puzzle_piece, edge_index, similarity_matrix):
+    best_match_i = None
+    min_dist = float('inf')
+    i = int(puzzle_piece.number)
+
+    row = similarity_matrix[i+edge_index]
+    for j in range(len(row)):
+        if row[j] < min_dist:
+            min_dist = row[j]
+            best_match_i = j
+    return (min_dist, best_match_i)
+
+def get_matches(puzzle_piece, edge_index, similarity_matrix):
+    i = int(puzzle_piece.number)
+    row = similarity_matrix[i + edge_index]  # Get the corresponding row
+
+    # Collect all non-infinity values along with their original indices
+    matches = [(row[j], j) for j in range(len(row)) if row[j] != float('inf')]
+
+    # Sort matches by similarity score (lower is better)
+    matches.sort()
+
+    return matches

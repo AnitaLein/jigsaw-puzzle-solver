@@ -22,3 +22,13 @@ def load_puzzle_pieces_from_csv(filename):
             puzzle_piece = PuzzlePiece(number, type, edges)
             puzzle_pieces.append(puzzle_piece)
     return puzzle_pieces
+
+def save_puzzle_piece_to_grid(grid, piece, rotation, row, col):
+    grid[row][col] = (piece.number, rotation)
+
+
+def save_grid_to_csv(grid):
+    with open('puzzle_grid', "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(grid)
+    print("Puzzle grid saved to 'puzzle_grid.csv'")
