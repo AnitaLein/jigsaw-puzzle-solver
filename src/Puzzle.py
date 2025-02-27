@@ -6,117 +6,119 @@ from puzzle_types import EdgeType
 
 
 def place_corner_piece(grid, corner_pieces, puzzle_pieces):
-
-    grid_size = len(grid)
+    rotated_pieces = []
     rotation = -1
     connected_pieces = []
 
-    for i in range(len(corner_pieces)):
+    straight_edges = []
 
-        index = int(corner_pieces[i].number)
-        straight_edges = []
+    for x in range(4):
+        if puzzle_pieces[0].edges[x].type == EdgeType.Gerade:
+            straight_edges.append(x)
 
-        for x in range(4):
-            if puzzle_pieces[index].edges[x].type == EdgeType.Gerade:
-                straight_edges.append(x)
+    if len(corner_pieces) == 4:  # Top-left (0,0)
+        rotation = corner_rotation(straight_edges)
+        rotated_piece = rotate_piece(corner_pieces[0], rotation)
+        rotated_pieces.append(rotated_piece)
+        save_puzzle_piece_to_grid(grid, corner_pieces[0], rotation, 0, 0)
+        connected_pieces.append(corner_pieces[0].number)
+    else:
+        print("Not enough corner pieces")    
+    print('connected', connected_pieces)
+    return grid, connected_pieces, rotated_pieces
 
-        if i == 0:  # Top-left (0,0)
-            rotation = corner_rotation(straight_edges)
-            print(rotation)
-            save_puzzle_piece_to_grid(grid, corner_pieces[i], rotation, 0, 0)
-            connected_pieces.append(index)
-        
-    return grid, connected_pieces
-
-def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces):
+def place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces, rotated_pieces):
     grid_size = len(grid)
 
-    def place_piece(grid, row, col, piece_index, edge_index, rotation):
-        """Helper function to find and place the best matching piece."""
-        #edge_index = (neighbor_rotation + edge_offset) % 4
+    def place_piece(grid, row, col, piece_index, edge_index, rotation, is_row):
         piece = puzzle_pieces[piece_index]
-        match_result = get_matches(piece, edge_index, similarity_matrix)
-
-        for best_match in match_result:
-            match_piece_i = best_match[1] // 4
-            match_piece = puzzle_pieces[match_piece_i]
+        match_results = get_matches(piece, edge_index, similarity_matrix)
+        
+        print(match_results)
+        for best_match in match_results:
+            match_piece = puzzle_pieces[best_match[1] // 4]
+            
+            
+            if grid_size > 8 and (match_piece.type == PieceType.Center or 
+                                  (match_piece.type == PieceType.Corner and piece.type == PieceType.Corner)):
+                print('Skipped due to type constraints')
+                continue
             
             if match_piece.number in connected_pieces:
                 print("Piece already connected")
                 continue
+            
+            new_index = (edge_index - int(rotation)) % 4
+            expected_index = 1 if is_row else 2
+            
+            if new_index == expected_index:
+                rotation = piece_rotation(best_match[1] % 4, new_index)
+                rotated_piece = rotate_piece(match_piece, rotation)
                 
+                edge_check_index = 0 if is_row else 3
+                if rotated_piece.edges[edge_check_index].type != EdgeType.Gerade:
+                    print('Skipped due to incorrect rotation')
+                    continue
+                
+                new_row, new_col = (row, col + 1) if is_row else (row + 1, col)
+                grid = save_puzzle_piece_to_grid(grid, match_piece, rotation, new_row, new_col)
+                rotated_pieces.append(rotated_piece)
+                connected_pieces.append(match_piece.number)
+                print('Piece placed successfully')
+                break
             else:
-                new_index = (edge_index - int(rotation)) % 4
-                print('new index', new_index)
-                print(new_index)
-                if new_index == 0:
-                    '''rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row, col - 1)
-                    print(edge_index)'''
-                    continue
-                elif new_index == 1:
-                    rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row , col + 1)
-                    break
-                elif new_index == 2:
-                    rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row + 1, col)
-                    break
-                elif new_index == 3:
-                    '''rotation = piece_rotation(best_match[1] % 4, new_index)
-                    grid = save_puzzle_piece_to_grid(grid, puzzle_pieces[match_piece_i], rotation, row - 1, col)'''
-                    continue
-                connected_pieces.append(match_piece.number) 
+                print('Skipped due to index mismatch')
+    
         else:
-            print("No match found")
-
-    # Step 1: Start at (0,0) and extend right and down
-    top_left_piece, top_left_rotation = grid[0][0]
-    top_left_piece = int(top_left_piece)
-    for x in range(4):
-        place_piece(grid, 0, 0, top_left_piece, x, top_left_rotation)
+            print("No suitable match found")
     
-    current_piece, current_rotation = grid[0][1]
-    for x in range(4):
-        place_piece(grid, 0, 1, current_piece, x, current_rotation) 
+    # Place the first row
+    for i in range(grid_size):
+        if grid[0][i] is None:
+            break
+        current_piece, current_rotation = grid[0][i]
+        current_piece = int(current_piece)
+        
+        for x in range(4):
+            place_piece(grid, 0, i, current_piece, x, current_rotation, is_row=True)
     
-    current_piece2, current_rotation2 = grid[0][2]
-    for x in range(4):
-        place_piece(grid, 0, 1, current_piece2, x, current_rotation2) 
+    # Place the first column
+    for i in range(grid_size):
+        if grid[i][0] is None:
+            break
+        current_piece, current_rotation = grid[i][0]
+        current_piece = int(current_piece)
+        
+        for x in range(4):
+            place_piece(grid, i, 0, current_piece, x, current_rotation, is_row=False)
+    #place last row
+    '''for i in range(3):
+        if grid[end_of_col][i] == None:
+            break
+        current_piece2, current_rotation2 = grid[end_of_col][i]
+        current_piece2 = int(current_piece2)
+        for x in range(4):
+            place_row_piece(grid, end_of_col, i, current_piece2, x, current_rotation2)
     
-    
-
+    #place last column
+    for i in range(3):
+        if grid[i][end_of_row] == None:
+            break
+        current_piece2, current_rotation2 = grid[i][end_of_row]
+        current_piece2 = int(current_piece2)
+        for x in range(4):
+            place_column_piece(grid, i, end_of_row, current_piece2, x, current_rotation2)'''
+        
+        
     return grid
 
-''' for col in range(grid_size - 1):  # Filling the top row
-        current_piece, current_rotation = grid[0][col]
-        current_piece = int(current_piece)
-        for x in range(4):
-            place_piece(grid, 0, col, current_piece, x, current_rotation)
-
-        # Step 3: Iterate over the last column to fill the right edge
-    for row in range(grid_size - 1):
-        current_piece, current_rotation = grid[row][-1]
-        current_piece = int(current_piece)
-        for x in range(4):
-            place_piece(row, grid_size - 1, current_piece, x, current_rotation)  # Match bottom edge
-
-    # Step 4: Iterate over the last row to fill the bottom edge
-    for col in range(grid_size - 1, 0, -1):
-        current_piece, current_rotation = grid[-1][col]
-        current_piece = int(current_piece)
-        for x in range(4):
-            place_piece(grid_size - 1, col, current_piece, x, current_rotation)  # Match left edge
-
-    # Step 5: Iterate over the first column to fill the left edge
-    for row in range(grid_size - 1, 0, -1):
-        current_piece, current_rotation = grid[row][0]
-        current_piece = int(current_piece)
-        for x in range(4):
-            place_piece(row, 0, current_piece, x, current_rotation)
-'''
     
+def rotate_piece(piece, rotation):
+    new_piece = PuzzlePiece(piece.number, piece.type, edges=[])
+    for i in range(4):
+        new_piece.edges.append(piece.edges[(i + rotation) % 4])
 
+    return new_piece
 
 def corner_rotation(a):
     if a == [0, 1]:
@@ -130,20 +132,5 @@ def corner_rotation(a):
 
 #how many times needs to be rotated
 def piece_rotation(a, b):
-    if a == b:
-        return 0 
-    elif b > a:
-        if b == (a + 1) % 4:
-            return 3
-        if b == (a + 2) % 4:
-            return 2
-        if b == (a + 3) % 4:
-            return 1
-    elif a > b:
-        if a == (b + 1) % 4:
-            return 1
-        if a == (b + 2) % 4:
-            return 2
-        if a == (b + 3) % 4:
-            return 3
+    return (a - b + 2) % 4
 
