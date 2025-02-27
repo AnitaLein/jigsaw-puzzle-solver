@@ -3,7 +3,7 @@
         "main.py",
         "contours.py",
         "corners.py",
-        "edge_matching.py",
+        "compute_similarities.py",
         "intersection.py",
         "canny_with_filters.py",
         "extract_pieces.py",
