@@ -35,7 +35,7 @@ def main(puzzle_name, piece_name, work_dir):
     #        cv2.circle(puzzle_piece.image, tuple(edge.points[0]), 5, (255, 0, 0, 255), cv2.FILLED)
 
     # write edges to disk
-    with open(Path(edge_output_dir, f"{piece_name}.txt"), 'w') as f:
+    with open(Path(edge_output_dir, f"{piece_name}.txt"), "w") as f:
         for edge in edges:
             points = ", ".join([f"({p[0]}, {p[1]})" for p in edge.points])
             f.write(f"{edge.type.name}: {points}\n")
@@ -49,7 +49,7 @@ def read_contour_file(file_path):
 
     points = line[1:-2].split("), (")
     points = [point.split(", ") for point in points]
-    points = [(int(point[0]), int(point[1])) for point in points]
+    points = [(int(x), int(y)) for x, y in points]
     points = np.array(points)
 
     return points
