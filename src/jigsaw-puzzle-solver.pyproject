@@ -1,8 +1,10 @@
 {
     "files": [
         "main.py",
+        "extract_and_classify_pieces.py",
         "contours.py",
         "corners.py",
+        "edge_matching.py",
         "intersection.py",
         "canny_with_filters.py",
         "piece_classification.py",

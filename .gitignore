@@ -5,6 +5,7 @@ project/target/
 .cache
 /**/.idea/
 .bsp/
+work/
 output_edges_contours/
 output_corners/
 output_split_edges/

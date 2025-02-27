@@ -7,40 +7,27 @@ import cv2
 from typing import List, Tuple, Dict
 
 
-# Define the EdgeType class
-class EdgeType(Enum):
-    Gerade = "Gerade"
-    Nase = "Nase"
-    Loch = "Loch"
+class EdgeType(int, Enum):
+    Flat = 0
+    Tab = 1
+    Blank = -1
 
 class PieceType(Enum):
     Corner = "Corner"
     Edge = "Edge"
     Center = "Center"
 
-# Define the BasicEdge class
-@dataclass
-class BasicEdge:
-    type: EdgeType
-    offset: float
-
-# Define the BasicPuzzlePiece class
-@dataclass
-class BasicPuzzlePiece:
-    edges: List[BasicEdge]  # List of BasicEdge objects
-
-# Define the Edge class
 @dataclass
 class Edge:
     type: EdgeType
-    points: List[np.ndarray]  # List of points as np.array (cv2.Point2d equivalent)
+    points: np.ndarray
 
 
 @dataclass
 class PuzzlePiece:
-    number: int
-    type: PieceType
-    edges: List[Edge]  # List of Edge objects
+    name: str
+    image: np.ndarray
+    edges: List[Edge]
 
 
 @dataclass

@@ -1,256 +1,235 @@
-import csv
-import os
 import cv2
 import numpy as np
-from csv_saving import *
-from puzzle_types import *
+import statistics
+from itertools import product
+from puzzle_types import PuzzlePiece, Edge, EdgeType
+
+def process_scan(scan, scan_name):
+    contours = find_contours(scan, False)
+
+    puzzle_pieces = []
+    for i, contour in enumerate(contours):
+        crop_region = cv2.boundingRect(contour)
+
+        # move contour to origin
+        contour -= crop_region[:2]
+
+        # create a new image with an alpha channel
+        cropped_image = np.zeros((crop_region[3], crop_region[2], 4), dtype=np.uint8)
+
+        # set the alpha channel to the filled contour
+        mask = np.zeros((crop_region[3], crop_region[2]), dtype=np.uint8)
+        cv2.drawContours(mask, [contour], 0, 255, cv2.FILLED)
+        cropped_image[:, :, 3] = mask
+
+        # copy the actual image data
+        cropped_image[:, :, :3] = scan[crop_region[1]:crop_region[1] + crop_region[3], crop_region[0]:crop_region[0] + crop_region[2]]
+
+        # get initial classification parameters
+        params = classify_piece(contour)
+        synthetic_contour = create_puzzle_piece(cv2.boundingRect(contour), *params)
+
+        # refine synthesized contour to get more accurate corner points
+        synthetic_contour = refine_contour(synthetic_contour, contour)
+
+        # find corner indices in the original contour
+        corner_indices = get_corner_indices(synthetic_contour, contour, params[:4])
+
+        # split the contour into edges
+        edge_paths = split_contour(contour, corner_indices)
+        edges = [Edge(edge_type, edge_path) for edge_type, edge_path in zip(params[:4], edge_paths)]
+
+        puzzle_pieces.append(PuzzlePiece(f"{scan_name}_{i}", cropped_image, edges))
+
+    return puzzle_pieces
 
 
-def preprocess_image(image, b):
-    preprocessed_image = cv2.medianBlur(image, 3)
+def find_contours(image, b):
+    preprocessed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    preprocessed_image = cv2.medianBlur(preprocessed_image, 3)
 
-    # Otsu threshold
+    # otsu threshold
     _, preprocessed_image = cv2.threshold(preprocessed_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    # Fill small holes in the background and foreground
+    # fill small holes in the background and foreground
     if b:
         kernel_size = 5
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
         preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_OPEN, kernel)
         preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_CLOSE, kernel)
 
-    # Segment image
+    # segment image
     contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    preprocessed_image = np.zeros_like(image, dtype=np.uint8)
+    contours = [contour for contour in contours if cv2.contourArea(contour) > 1000]
+    contours = [cnt.reshape(-1, 2) for cnt in contours]
+
+    # find average contour height
+    average_height = statistics.mean([cv2.boundingRect(contour)[3] for contour in contours])
+
+    # sort by contour center
+    def grid_order(contour):
+        moments = cv2.moments(contour)
+        center = (moments['m10'] / moments['m00'], moments['m01'] / moments['m00'])
+        return center[1] * image.shape[1] * 2 / average_height + center[0]
+
+    contours.sort(key = grid_order)
+
+    # reverse all contours to get clockwise orientation
     for contour in contours:
-        if len(contour) > 150:
-            cv2.drawContours(preprocessed_image, [contour], 0, 255, cv2.FILLED)
+        contour[:] = contour[::-1]
 
-    return preprocessed_image
+    return contours
 
 
-def create_puzzle_piece(bounding_box, top, top_offset, right, right_offset, bottom, bottom_offset, left, left_offset):
+def classify_piece(contour):
+    bounding_box = cv2.boundingRect(contour)
+    mask = np.zeros((bounding_box[3], bounding_box[2]), dtype=np.uint8)
+    cv2.drawContours(mask, [contour], 0, 255, cv2.FILLED)
+
+    def genParams():
+        for edge_types in product(EdgeType, repeat = 4):
+            nonFlatOffsets = np.linspace(-0.1, 0.1, 3)
+            possible_offsets = [([0] if val == 0 else nonFlatOffsets) for val in edge_types]
+
+            for offsets in product(*possible_offsets):
+                yield *edge_types, *offsets
+
+    def diffToReference(params):
+        test = np.zeros_like(mask)
+        test_contour = create_puzzle_piece(cv2.boundingRect(contour), *params)
+        cv2.drawContours(test, [test_contour], 0, 255, cv2.FILLED)
+
+        # calculate the difference between the actual puzzle piece and the generated one
+        difference = cv2.absdiff(mask, test)
+        return cv2.countNonZero(difference)
+
+    return min(genParams(), key = diffToReference)
+
+
+def create_puzzle_piece(bounding_box, top, right, bottom, left, top_offset, right_offset, bottom_offset, left_offset):
     tab_height = 0.3
     tab_width = 0.25
     expansion = 0  # 0.03
 
     points = []
-    points.append((0.0, 0.0))
+    points.append([0.0, 0.0])
 
     if top != 0:
-        points.append(((1 - tab_width) / 2 + top_offset, 0.0))
-        points.append(((1 - tab_width) / 2 + top_offset - expansion, -top * tab_height))
-        points.append(((1 + tab_width) / 2 + top_offset + expansion, -top * tab_height))
-        points.append(((1 + tab_width) / 2 + top_offset, 0.0))
-    points.append((1.0, 0.0))
+        points.append([(1 - tab_width) / 2 + top_offset, 0.0])
+        points.append([(1 - tab_width) / 2 + top_offset - expansion, -top * tab_height])
+        points.append([(1 + tab_width) / 2 + top_offset + expansion, -top * tab_height])
+        points.append([(1 + tab_width) / 2 + top_offset, 0.0])
+    points.append([1.0, 0.0])
 
     if right != 0:
-        points.append((1.0, (1 - tab_width) / 2 + right_offset))
-        points.append((1 + right * tab_height, (1 - tab_width) / 2 + right_offset - expansion))
-        points.append((1 + right * tab_height, (1 + tab_width) / 2 + right_offset + expansion))
-        points.append((1.0, (1 + tab_width) / 2 + right_offset))
-    points.append((1.0, 1.0))
+        points.append([1.0, (1 - tab_width) / 2 + right_offset])
+        points.append([1 + right * tab_height, (1 - tab_width) / 2 + right_offset - expansion])
+        points.append([1 + right * tab_height, (1 + tab_width) / 2 + right_offset + expansion])
+        points.append([1.0, (1 + tab_width) / 2 + right_offset])
+    points.append([1.0, 1.0])
 
     if bottom != 0:
-        points.append(((1 + tab_width) / 2 + bottom_offset, 1.0))
-        points.append(((1 + tab_width) / 2 + bottom_offset + expansion, 1 + bottom * tab_height))
-        points.append(((1 - tab_width) / 2 + bottom_offset - expansion, 1 + bottom * tab_height))
-        points.append(((1 - tab_width) / 2 + bottom_offset, 1.0))
-    points.append((0.0, 1.0))
+        points.append([(1 + tab_width) / 2 + bottom_offset, 1.0])
+        points.append([(1 + tab_width) / 2 + bottom_offset + expansion, 1 + bottom * tab_height])
+        points.append([(1 - tab_width) / 2 + bottom_offset - expansion, 1 + bottom * tab_height])
+        points.append([(1 - tab_width) / 2 + bottom_offset, 1.0])
+    points.append([0.0, 1.0])
 
     if left != 0:
-        points.append((0.0, (1 + tab_width) / 2 + left_offset))
-        points.append((-left * tab_height, (1 + tab_width) / 2 + left_offset + expansion))
-        points.append((-left * tab_height, (1 - tab_width) / 2 + left_offset - expansion))
-        points.append((0.0, (1 - tab_width) / 2 + left_offset))
+        points.append([0.0, (1 + tab_width) / 2 + left_offset])
+        points.append([-left * tab_height, (1 + tab_width) / 2 + left_offset + expansion])
+        points.append([-left * tab_height, (1 - tab_width) / 2 + left_offset - expansion])
+        points.append([0.0, (1 - tab_width) / 2 + left_offset])
 
-    rect = [0, 0, 1, 1]  # x, y, width, height
     points = np.array(points)
-    min_x, min_y = np.min(points, axis=0)
-    max_x, max_y = np.max(points, axis=0)
+    min_x, min_y = np.min(points, axis = 0)
+    max_x, max_y = np.max(points, axis = 0)
 
-    rect_width = max_x - min_x
-    rect_height = max_y - min_y
+    width = max_x - min_x
+    height = max_y - min_y
 
-    # Normalize to a unit square
-    points[:, 0] = (points[:, 0] - min_x) / rect_width
-    points[:, 1] = (points[:, 1] - min_y) / rect_height
+    # normalize to a unit square
+    points[:, 0] = (points[:, 0] - min_x) / width
+    points[:, 1] = (points[:, 1] - min_y) / height
 
-    # Scale and translate to output bounding box
+    # scale and translate to output bounding box
     puzzle_piece = []
     for point in points:
         x = round(bounding_box[0] + bounding_box[2] * point[0])
         y = round(bounding_box[1] + bounding_box[3] * point[1])
-        puzzle_piece.append((x, y))
+        puzzle_piece.append([x, y])
 
-    return np.array(puzzle_piece, dtype=np.int32)
+    return np.array(puzzle_piece)
 
-def classify_piece(original, image):
-    preprocessed_image = preprocess_image(image, False)
-    contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # reverse each contour to get clockwise order
-    for contour in contours:
-        contour[:] = contour[::-1]
+def refine_contour(contour, reference):
+    bounding_box = cv2.boundingRect(reference)
+    mask = np.zeros((bounding_box[3], bounding_box[2]), dtype=np.uint8)
+    cv2.drawContours(mask, [reference], 0, 255, cv2.FILLED)
 
-    counter = 0
+    directions = [
+        (0, -1), (1, 0), (0, 1), (-1, 0),
+        (-1, -1), (1, 1), (-1, 1), (1, -1),
+        (0, -2), (2, 0), (0, 2), (-2, 0)
+    ]
 
-    puzzle_pieces = []
-    corner_pieces = []
-    border_pieces = []
+    for _ in range(100):
+        for i, point in enumerate(contour):
+            test = np.zeros_like(mask)
+            cv2.drawContours(test, [contour], 0, 255, cv2.FILLED)
+            difference = cv2.absdiff(mask, test)
+            best_diff = cv2.countNonZero(difference)
+            best_dir = (0, 0)
 
-    for contour in contours:
-        bounding_box = cv2.boundingRect(contour)
+            for dir in directions:
+                new_point = point + dir
+                if 0 <= new_point[0] < mask.shape[1] and 0 <= new_point[1] < mask.shape[0]:
+                    test = np.zeros_like(mask)
+                    contour[i] = new_point
+                    cv2.drawContours(test, [contour], 0, 255, cv2.FILLED)
+                    difference = cv2.absdiff(mask, test)
+                    diff = cv2.countNonZero(difference)
+                    if diff < best_diff:
+                        best_diff = diff
+                        best_dir = dir
 
-        # Verschiebung der Kontur auf den Ursprung des Bounding-Box-Koordinatensystems
-        for point in contour:
-            point -= bounding_box[:2]
+                    contour[i] = point
 
-        mask = np.zeros((bounding_box[3], bounding_box[2]), dtype=np.uint8)
-        cv2.drawContours(mask, [contour], 0, 255, cv2.FILLED)
+            contour[i] += best_dir
 
-        best_params = None
-        best_white = float('inf')
+    return contour
 
-        for top in range(-1, 2):
-            for right in range(-1, 2):
-                for bottom in range(-1, 2):
-                    for left in range(-1, 2):
-                        for top_offset in np.arange(-0.1, 0.11, 0.1):
-                            for right_offset in np.arange(-0.1, 0.11, 0.1):
-                                for bottom_offset in np.arange(-0.1, 0.11, 0.1):
-                                    for left_offset in np.arange(-0.1, 0.11, 0.1):
-                                        test = np.zeros_like(mask)
-                                        # create puzzle piece based on all possible combinations of parameters
-                                        puzzle_piece = create_puzzle_piece(cv2.boundingRect(contour), top, top_offset, right, right_offset, bottom, bottom_offset, left, left_offset)
-                                        cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
-                                        # calculate the difference between the mask and the test image
-                                        difference = cv2.absdiff(mask, test)
-                                        white = cv2.countNonZero(difference)
 
-                                        if white < best_white:
-                                            best_params = (top, top_offset, right, right_offset, bottom, bottom_offset, left, left_offset)
-                                            
-                                            best_white = white
-        #print(best_params)
-        puzzle_piece = create_puzzle_piece(cv2.boundingRect(contour), *best_params)
-        #params_classified = (best_params[0], best_params[2], best_params[4], best_params[6])
+def get_corner_indices(synthetic_contour, reference_contour, edge_types):
+    # extract approximate corners from generated contour
+    corners = []
+    i = 0
+    for edge_type in edge_types:
+        corners.append(synthetic_contour[i])
+        i += 1 if edge_type == EdgeType.Flat else 5
 
-        basic_puzzle_piece = BasicPuzzlePiece([])
-        for i in range(0, len(best_params), 2):
-            if best_params[i] == 0:
-                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Gerade, best_params[i+1]))
-            elif best_params[i] == 1:
-                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Nase, best_params[i+1]))
-            elif best_params[i] == -1:
-                basic_puzzle_piece.edges.append(BasicEdge(EdgeType.Loch, best_params[i+1]))
-        
-        #print(basic_puzzle_piece)
+    # slightly move corners diagonally outwards to improve accuracy
+    directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    corners = [corner + direction for corner, direction in zip(corners, directions)]
 
-        directions = [
-            (0, -1), (1, 0), (0, 1), (-1, 0),
-            (-1, -1), (1, 1), (-1, 1), (1, -1),
-            (0, -2), (2, 0), (0, 2), (-2, 0)
-        ]
+    # find the indices of the nearest contour points
+    return [min(range(len(reference_contour)), key = lambda i: np.linalg.norm(corner - reference_contour[i])) for corner in corners]
 
-        # refine contour
-        for _ in range(100):
-            for point_idx, point in enumerate(puzzle_piece):
-                test = np.zeros_like(mask)
-                cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
-                difference = cv2.absdiff(mask, test)
-                best_diff = cv2.countNonZero(difference)
-                best_dir = (0, 0)
 
-                for direction in directions:
-                    new_point = point + direction
-                    if 0 <= new_point[0] < mask.shape[1] and 0 <= new_point[1] < mask.shape[0]:
-                        test = np.zeros_like(mask)
-                        puzzle_piece[point_idx] = new_point
-                        cv2.drawContours(test, [puzzle_piece], 0, 255, cv2.FILLED)
-                        difference = cv2.absdiff(mask, test)
-                        diff = cv2.countNonZero(difference)
-                        if diff < best_diff:
-                            best_diff = diff
-                            best_dir = direction
+def split_contour(contour, corner_indices):
+    paths = []
 
-                        puzzle_piece[point_idx] = point
+    for i in range(len(corner_indices)):
+        start_idx = corner_indices[i]
+        end_idx = corner_indices[(i + 1) % 4]
 
-                puzzle_piece[point_idx] += best_dir
+        path = []
+        j = start_idx
+        while j != end_idx:
+            path.append(contour[j])
+            j = (j + 1) % len(contour)
 
-        puzzle_piece += bounding_box[:2]
-        output_folder = 'output_corners'
-        edge_img = np.zeros_like(original)
-        cv2.drawContours(edge_img, [contour], 0, (255,255,255), 2)
-        
-        # Verschiebung der puzzle_piece auf den Ursprung des Bounding-Box-Koordinatensystems
-        for point in puzzle_piece:
-            point -= bounding_box[:2]
+        path.append(contour[end_idx])
+        paths.append(np.array(path))
 
-        # extract approximate corners from generated contour
-        corners = []
-        i = 0
-        for edge in basic_puzzle_piece.edges:
-            corners.append(puzzle_piece[i])
-            
-            if edge.type == EdgeType.Gerade:
-                i += 1
-            else:
-                i += 5
-
-        # slightly move corners diagonally outwards to improve accuracy
-        directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
-        corners = [corner + np.array(direction) * 5 for corner, direction in zip(corners, directions)]
-        puzzle_piece = PuzzlePiece(None, None, [])
-
-        # find the indices of the nearest contour points
-        corner_indices = []
-        for corner in corners:
-            distances = [np.linalg.norm(np.array(corner) - np.array(p)) for p in contour]
-            nearest_corner = np.argmin(distances)
-            corner_indices.append(nearest_corner)
-
-        # split contour into edges
-        edge_counter = 0
-        for i in range(4):
-            start_idx = corner_indices[i]
-            end_idx = corner_indices[(i + 1) % 4]
-
-            edge_points = []
-            j = start_idx
-            while j != end_idx:
-                edge_points.append(contour[j])
-                j = (j + 1) % len(contour)
-
-            edge_points.append(contour[end_idx])
-
-            type = basic_puzzle_piece.edges[i].type
-            if type == EdgeType.Gerade:
-                edge_counter += 1
-                color = (0, 255, 255)
-            elif type == EdgeType.Nase:
-                color = (0, 255, 0)
-            elif type == EdgeType.Loch:
-                color = (0, 0, 255)
-
-            cv2.polylines(edge_img, [np.array(edge_points)], False, color, 2)
-            split_edge = Edge(type, edge_points)
-            puzzle_piece.edges.append(split_edge)
-
-        if edge_counter == 1:
-            puzzle_piece.type = PieceType.Edge
-            border_pieces.append(puzzle_piece)
-        elif edge_counter == 2:
-            puzzle_piece.type = PieceType.Corner
-            corner_pieces.append(puzzle_piece)
-        else:
-            puzzle_piece.type = PieceType.Center
-        puzzle_piece.number = counter
-        puzzle_pieces.append(puzzle_piece)
-
-        counter += 1
-    
-    save_puzzle_pieces_to_csv(corner_pieces, 'corner_pieces')
-    save_puzzle_pieces_to_csv(border_pieces, 'border_pieces')
-    return puzzle_pieces
-
+    return paths
