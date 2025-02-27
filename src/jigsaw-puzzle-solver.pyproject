@@ -1,11 +1,7 @@
 {
     "files": [
         "main.py",
-        "contours.py",
-        "corners.py",
         "compute_similarities.py",
-        "intersection.py",
-        "canny_with_filters.py",
         "extract_pieces.py",
         "classify_piece.py",
         "puzzle_types.py"
