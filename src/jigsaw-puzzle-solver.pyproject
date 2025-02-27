@@ -1,7 +1,6 @@
 {
     "files": [
         "main.py",
-        "extract_and_classify_pieces.py",
         "contours.py",
         "corners.py",
         "edge_matching.py",
