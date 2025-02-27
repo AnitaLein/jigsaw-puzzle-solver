@@ -6,6 +6,7 @@
         "edge_matching.py",
         "intersection.py",
         "canny_with_filters.py",
+        "extract_pieces.py",
         "piece_classification.py",
         "puzzle_types.py"
     ]

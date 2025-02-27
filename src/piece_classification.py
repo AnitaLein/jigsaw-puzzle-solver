@@ -2,85 +2,75 @@ import sys
 from pathlib import Path
 import cv2
 import numpy as np
-import statistics
 from itertools import product
-from puzzle_types import PuzzlePiece, Edge, EdgeType
+from puzzle_types import Edge, EdgeType
 
-def process_scan(scan, scan_name):
-    contours = find_contours(scan, False)
+def main(puzzle_name, piece_name, work_dir):
+    input_dir = Path(work_dir, puzzle_name, "contours")
+    edge_output_dir = Path(work_dir, puzzle_name, "edges")
 
-    puzzle_pieces = []
-    for i, contour in enumerate(contours):
-        crop_region = cv2.boundingRect(contour)
+    # create output directory if it does not exist
+    Path(edge_output_dir).mkdir(parents = True, exist_ok = True)
 
-        # move contour to origin
-        contour -= crop_region[:2]
+    input_path = Path(input_dir, piece_name + ".txt")
+    contour = read_contour_file(input_path)
 
-        # create a new image with an alpha channel
-        cropped_image = np.zeros((crop_region[3], crop_region[2], 4), dtype=np.uint8)
+    edges = extract_edges(contour, piece_name)
 
-        # set the alpha channel to the filled contour
-        mask = np.zeros((crop_region[3], crop_region[2]), dtype=np.uint8)
-        cv2.drawContours(mask, [contour], 0, 255, cv2.FILLED)
-        cropped_image[:, :, 3] = mask
+    #debug = False
+    #if debug:
+    #    # draw edges
+    #    for edge in puzzle_piece.edges:
+    #        if edge.type == EdgeType.Flat:
+    #            color = (0, 255, 255, 255)
+    #        elif edge.type == EdgeType.Tab:
+    #            color = (0, 255, 0, 255)
+    #        elif edge.type == EdgeType.Blank:
+    #            color = (0, 0, 255, 255)
 
-        # copy the actual image data
-        cropped_image[:, :, :3] = scan[crop_region[1]:crop_region[1] + crop_region[3], crop_region[0]:crop_region[0] + crop_region[2]]
+    #        cv2.polylines(puzzle_piece.image, [edge.points], False, color, 2)
 
-        # get initial classification parameters
-        params = classify_piece(contour)
-        synthetic_contour = create_puzzle_piece(cv2.boundingRect(contour), *params)
+    #    # draw corners
+    #    for edge in puzzle_piece.edges:
+    #        cv2.circle(puzzle_piece.image, tuple(edge.points[0]), 5, (255, 0, 0, 255), cv2.FILLED)
 
-        # refine synthesized contour to get more accurate corner points
-        synthetic_contour = refine_contour(synthetic_contour, contour)
+    # write edges to disk
+    with open(Path(edge_output_dir, f"{piece_name}.txt"), 'w') as f:
+        for edge in edges:
+            points = ", ".join([f"({p[0]}, {p[1]})" for p in edge.points])
+            f.write(f"{edge.type.name}: {points}\n")
 
-        # find corner indices in the original contour
-        corner_indices = get_corner_indices(synthetic_contour, contour, params[:4])
-
-        # split the contour into edges
-        edge_paths = split_contour(contour, corner_indices)
-        edges = [Edge(edge_type, edge_path) for edge_type, edge_path in zip(params[:4], edge_paths)]
-
-        puzzle_pieces.append(PuzzlePiece(f"{scan_name}_{i}", cropped_image, edges))
-
-    return puzzle_pieces
+    print("classfication done")
 
 
-def find_contours(image, b):
-    preprocessed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    preprocessed_image = cv2.medianBlur(preprocessed_image, 3)
+def read_contour_file(file_path):
+    with open(file_path, 'r') as f:
+        line = f.readline()
 
-    # otsu threshold
-    _, preprocessed_image = cv2.threshold(preprocessed_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    points = line[1:-2].split("), (")
+    points = [point.split(", ") for point in points]
+    points = [(int(point[0]), int(point[1])) for point in points]
+    points = np.array(points)
 
-    # fill small holes in the background and foreground
-    if b:
-        kernel_size = 5
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
-        preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_OPEN, kernel)
-        preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_CLOSE, kernel)
+    return points
 
-    # segment image
-    contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contours = [contour for contour in contours if cv2.contourArea(contour) > 1000]
-    contours = [cnt.reshape(-1, 2) for cnt in contours]
 
-    # find average contour height
-    average_height = statistics.mean([cv2.boundingRect(contour)[3] for contour in contours])
+def extract_edges(contour, piece_name):
+    # get initial classification parameters
+    params = classify_piece(contour)
+    synthetic_contour = create_puzzle_piece(cv2.boundingRect(contour), *params)
 
-    # sort by contour center
-    def grid_order(contour):
-        moments = cv2.moments(contour)
-        center = (moments['m10'] / moments['m00'], moments['m01'] / moments['m00'])
-        return center[1] * image.shape[1] * 2 / average_height + center[0]
+    # refine synthesized contour to get more accurate corner points
+    synthetic_contour = refine_contour(synthetic_contour, contour)
 
-    contours.sort(key = grid_order)
+    # find corner indices in the original contour
+    corner_indices = get_corner_indices(synthetic_contour, contour, params[:4])
 
-    # reverse all contours to get clockwise orientation
-    for contour in contours:
-        contour[:] = contour[::-1]
+    # split the contour into edges
+    edge_paths = split_contour(contour, corner_indices)
+    edges = [Edge(edge_type, edge_path) for edge_type, edge_path in zip(params[:4], edge_paths)]
 
-    return contours
+    return edges
 
 
 def classify_piece(contour):
@@ -238,55 +228,4 @@ def split_contour(contour, corner_indices):
 
 
 if __name__ == "__main__":
-    data_dir = Path(sys.argv[1])
-    puzzle_name = sys.argv[2]
-    scan_name = sys.argv[3]
-    work_dir = Path(sys.argv[4])
-
-    input_dir = Path(data_dir, puzzle_name)
-    output_dir = Path(work_dir, puzzle_name)
-    img_output_dir = Path(output_dir, "pieces")
-    edge_output_dir = Path(output_dir, "edges")
-
-    # create output directories if they do not exist
-    Path(img_output_dir).mkdir(parents = True, exist_ok = True)
-    Path(edge_output_dir).mkdir(parents = True, exist_ok = True)
-
-    input_path = Path(input_dir, scan_name + "b.jpg")
-    scan = cv2.imread(input_path)
-    assert scan is not None, f"Could not read image at {input_path}"
-
-    puzzle_pieces = process_scan(scan, scan_name)
-
-    # write puzzle pieces to disk
-    for puzzle_piece in puzzle_pieces:
-        debug = False
-        if debug:
-            # restore background
-            #puzzle_piece.image[:, :, 3] = 255
-
-            # draw edges
-            for edge in puzzle_piece.edges:
-                if edge.type == EdgeType.Flat:
-                    color = (0, 255, 255, 255)
-                elif edge.type == EdgeType.Tab:
-                    color = (0, 255, 0, 255)
-                elif edge.type == EdgeType.Blank:
-                    color = (0, 0, 255, 255)
-
-                cv2.polylines(puzzle_piece.image, [edge.points], False, color, 2)
-
-            # draw corners
-            for edge in puzzle_piece.edges:
-                cv2.circle(puzzle_piece.image, tuple(edge.points[0]), 5, (255, 0, 0, 255), cv2.FILLED)
-
-        # write cropped images
-        cv2.imwrite(Path(img_output_dir, f"{puzzle_piece.name}.png"), puzzle_piece.image)
-
-        # write edges
-        with open(Path(edge_output_dir, f"{puzzle_piece.name}.txt"), 'w') as f:
-            for edge in puzzle_piece.edges:
-                points = ", ".join([f"({p[0]}, {p[1]})" for p in edge.points])
-                f.write(f"{edge.type.name}: {points}\n")
-
-    print("classfication done")
+    main(*sys.argv[1:])
