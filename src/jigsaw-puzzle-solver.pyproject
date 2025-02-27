@@ -7,7 +7,7 @@
         "intersection.py",
         "canny_with_filters.py",
         "extract_pieces.py",
-        "piece_classification.py",
+        "classify_piece.py",
         "puzzle_types.py"
     ]
 }
