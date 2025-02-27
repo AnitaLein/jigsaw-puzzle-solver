@@ -40,9 +40,9 @@ def main(data_dir, puzzle_name, scan_name, work_dir):
         cv2.imwrite(Path(image_output_dir, f"{puzzle_piece.name}.png"), puzzle_piece.image)
 
         # write contour
-        with open(Path(contour_output_dir, f"{puzzle_piece.name}.txt"), "w") as f:
+        with open(Path(contour_output_dir, f"{puzzle_piece.name}.txt"), "w") as file:
             points = ", ".join([f"({p[0]}, {p[1]})" for p in puzzle_piece.contour])
-            f.write(f"{points}\n")
+            file.write(f"{points}\n")
 
     print("extracted", len(puzzle_pieces), "puzzle pieces")
 

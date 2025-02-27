@@ -15,11 +15,15 @@ class PuzzlePieceShape:
 
 def main(puzzle_name, work_dir):
     input_dir = Path(work_dir, puzzle_name, "edges")
+    similarities_output_dir = Path(work_dir, puzzle_name, "similarities")
 
-    # read all puzzle pieces in input_dir
+    # create output directory if it does not exist
+    Path(similarities_output_dir).mkdir(parents = True, exist_ok = True)
 
+    # read all puzzle pieces from the input directory
     files = input_dir.glob('*.txt')
     files = [f for f in files if f.is_file()]
+    print(files)
 
     puzzle_pieces = []
     for file in files:
@@ -34,9 +38,13 @@ def main(puzzle_name, work_dir):
     print()
 
     print("writing similarity matrix")
-    with open(Path(work_dir, puzzle_name, "similarity_matrix.txt"), mode = "w", newline = "") as file:
+    with open(Path(similarities_output_dir, "matrix.txt"), mode = "w", newline = "") as file:
         writer = csv.writer(file)
         writer.writerows(similarity_matrix)
+
+    # write the puzzle piece names
+    with open(Path(similarities_output_dir, "piece_order.txt"), mode = "w", newline = "") as file:
+        file.write(", ".join([piece.name for piece in puzzle_pieces]))
 
 
 def read_edges_file(file_path):
@@ -64,13 +72,9 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
 
             for j in range(len(puzzle_pieces)):
                 for y in range(4):
-                    if(puzzle_pieces[i].edges[x].type == EdgeType.Flat or puzzle_pieces[j].edges[y].type == EdgeType.Flat):
-                        similarity = float("inf")
-                    # Check edge continuity
-                    elif ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Flat) !=
-                        (puzzle_pieces[j].edges[(y + 3) % 4].type == EdgeType.Flat) or
-                        (puzzle_pieces[i].edges[(x + 3) % 4].type == EdgeType.Flat) !=
-                        (puzzle_pieces[j].edges[(y + 1) % 4].type == EdgeType.Flat)):
+                    # check edge continuity
+                    if ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Flat) != (puzzle_pieces[j].edges[(y + 3) % 4].type == EdgeType.Flat) or
+                        (puzzle_pieces[i].edges[(x + 3) % 4].type == EdgeType.Flat) != (puzzle_pieces[j].edges[(y + 1) % 4].type == EdgeType.Flat)):
                         similarity = float("inf")
                     else:
                         similarity = compare_edges(puzzle_pieces[i].edges[x], puzzle_pieces[j].edges[y])
