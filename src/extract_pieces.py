@@ -28,8 +28,6 @@ def main(data_dir, puzzle_name, scan_name, work_dir):
 
     puzzle_pieces = extract_pieces(scan, scan_name)
 
-    contours = find_contours(scan, False)
-
     # write puzzle pieces to disk
     for puzzle_piece in puzzle_pieces:
         debug = False
@@ -42,7 +40,7 @@ def main(data_dir, puzzle_name, scan_name, work_dir):
         cv2.imwrite(Path(image_output_dir, f"{puzzle_piece.name}.png"), puzzle_piece.image)
 
         # write contour
-        with open(Path(contour_output_dir, f"{puzzle_piece.name}.txt"), 'w') as f:
+        with open(Path(contour_output_dir, f"{puzzle_piece.name}.txt"), "w") as f:
             points = ", ".join([f"({p[0]}, {p[1]})" for p in puzzle_piece.contour])
             f.write(f"{points}\n")
 
@@ -80,7 +78,7 @@ def find_contours(image, b):
         preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_CLOSE, kernel)
 
     # segment image
-    contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     contours = [contour for contour in contours if cv2.contourArea(contour) > 1000]
     contours = [cnt.reshape(-1, 2) for cnt in contours]
 
