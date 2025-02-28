@@ -65,18 +65,21 @@ def read_edges_file(file_path):
 def compute_similarity_matrix(puzzle_pieces, print_progress = False):
     similarity_matrix = []
 
-    for i in range(len(puzzle_pieces)):
-        for x in range(4):
+    for a in puzzle_pieces:
+        for i in range(4):
             similarities = []
+            for b in puzzle_pieces:
+                for j in range(4):
+                    if a is b:
+                        similarity = float("inf")
 
-            for j in range(len(puzzle_pieces)):
-                for y in range(4):
-                    # check edge continuity
-                    if ((puzzle_pieces[i].edges[(x + 1) % 4].type == EdgeType.Flat) != (puzzle_pieces[j].edges[(y + 3) % 4].type == EdgeType.Flat) or
-                        (puzzle_pieces[i].edges[(x + 3) % 4].type == EdgeType.Flat) != (puzzle_pieces[j].edges[(y + 1) % 4].type == EdgeType.Flat)):
+                    # check flat edge continuity
+                    elif ((a.edges[(i + 1) % 4].type == EdgeType.Flat) != (b.edges[(j + 3) % 4].type == EdgeType.Flat) or
+                          (a.edges[(i + 3) % 4].type == EdgeType.Flat) != (b.edges[(j + 1) % 4].type == EdgeType.Flat)):
                         similarity = float("inf")
                     else:
-                        similarity = compare_edges(puzzle_pieces[i].edges[x], puzzle_pieces[j].edges[y])
+                        # ensure reflexivity
+                        similarity = compare_edges(a.edges[i], b.edges[j]) + compare_edges(b.edges[j], a.edges[i])
 
                     similarities.append(similarity)
 
@@ -123,7 +126,7 @@ def find_matches_closest(a, b, transform):
     tree = cKDTree(a)
     _, indices = tree.query(b_transformed)
 
-    return ([a[idx] for idx in indices], b)
+    return (a[indices], b)
 
 
 def transform_points(points, transform):

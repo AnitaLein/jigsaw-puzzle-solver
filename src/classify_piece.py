@@ -40,7 +40,7 @@ def main(puzzle_name, piece_name, work_dir):
             points = ", ".join([f"({p[0]}, {p[1]})" for p in edge.points])
             file.write(f"{edge.type.name}: {points}\n")
 
-    print("classfication done")
+    print("piece classified")
 
 
 def read_contour_file(file_path):
