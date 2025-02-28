@@ -6,6 +6,7 @@ import numpy as np
 from puzzle_types import Edge, EdgeType
 from scipy.spatial import cKDTree
 import csv
+import time
 
 @dataclass
 class PuzzlePieceShape:
@@ -33,8 +34,14 @@ def main(puzzle_name, work_dir):
     print(f"read {len(puzzle_pieces)} puzzle pieces")
 
     print("computing similarity matrix")
+    t0 = time.time()
     similarity_matrix = compute_similarity_matrix(puzzle_pieces, print_progress = True)
+    t1 = time.time()
     print()
+
+    benchmark = True
+    if benchmark:
+        print(f"computed similarity matrix in {t1 - t0:.3f} seconds")
 
     print("writing similarity matrix")
     with open(Path(similarities_output_dir, "matrix.txt"), mode = "w", newline = "") as file:
