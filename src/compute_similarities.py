@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import List
 from pathlib import Path
 import numpy as np
+from statistics import mean
+import math
 from puzzle_types import Edge, EdgeType
 from scipy.spatial import cKDTree
 import csv
@@ -70,14 +72,27 @@ def read_edges_file(file_path):
 
 
 def compute_similarity_matrix(puzzle_pieces, print_progress = False):
-    similarity_matrix = []
+    # calculate edge lengths
+    for piece in puzzle_pieces:
+        for edge in piece.edges:
+            edge.length = np.sum(np.linalg.norm(np.diff(edge.points, axis = 0), axis = 1))
 
+    # precompute the kdtrees
+    for piece in puzzle_pieces:
+        for edge in piece.edges:
+            edge.kdtree = cKDTree(edge.points)
+
+    similarity_matrix = []
     for a in puzzle_pieces:
         for i in range(4):
             similarities = []
             for b in puzzle_pieces:
                 for j in range(4):
                     if a is b:
+                        similarity = float("inf")
+
+                    # check if length differs by more than 3%
+                    elif abs(a.edges[i].length - b.edges[j].length) > 0.03 * mean([a.edges[i].length, b.edges[j].length]):
                         similarity = float("inf")
 
                     # check flat edge continuity
@@ -108,7 +123,7 @@ def compare_edges(a, b):
     )
 
     for i in range(10):
-        matches_a, matches_b = find_matches_closest(a.points, b.points, transform)
+        matches_a, matches_b = find_matches_closest(a, b, transform)
         new_transform = find_transformation_lsq(matches_a, matches_b)
 
         if transforms_equal(transform, new_transform) and i > 0:
@@ -128,12 +143,10 @@ def transforms_equal(a, b):
 
 
 def find_matches_closest(a, b, transform):
-    b_transformed = transform_points(b, transform)
+    b_transformed = transform_points(b.points, transform)
+    _, indices = a.kdtree.query(b_transformed)
 
-    tree = cKDTree(a)
-    _, indices = tree.query(b_transformed)
-
-    return (a[indices], b)
+    return (a.points[indices], b.points)
 
 
 def transform_points(points, transform):
