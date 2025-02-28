@@ -23,7 +23,6 @@ def main(puzzle_name, work_dir):
     # read all puzzle pieces from the input directory
     files = input_dir.glob('*.txt')
     files = [f for f in files if f.is_file()]
-    print(files)
 
     puzzle_pieces = []
     for file in files:
@@ -56,7 +55,7 @@ def read_edges_file(file_path):
             points = points[1:-2].split("), (")
             points = [point.split(", ") for point in points]
             points = [(int(x), int(y)) for x, y in points]
-            edges.append(Edge(edge_type, points))
+            edges.append(Edge(edge_type, np.array(points)))
 
     assert len(edges) == 4
 
@@ -155,7 +154,7 @@ def find_transformation_lsq(a, b):
         [np.cos(w), -np.sin(w)],
         [np.sin(w), np.cos(w)]
     ])
-    t = a_mean - np.dot(rotation_matrix, b_mean)
+    t = a_mean - np.dot(b_mean, rotation_matrix)
 
     return (t, w)
 
