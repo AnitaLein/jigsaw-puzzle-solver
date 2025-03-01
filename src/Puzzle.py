@@ -7,6 +7,72 @@ from puzzle_types import *
 import csv
 
 
+
+def setFirstPiece(grid, puzzle_pieces):
+    appended = []
+    center = len(grid[0]) // 2
+    pos_x, pos_y = center, center
+    grid[pos_y][pos_x] = (puzzle_pieces[0] , 0)
+    appended.append((puzzle_pieces[0], pos_y, pos_x))
+    return grid, appended
+
+def iterateOverAppended(appended, grid, puzzle_pieces, similarity_matrix):
+    grid, appended = setFirstPiece(grid, puzzle_pieces)
+    for i in range(len(puzzle_pieces)):
+        grid, appended = solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, i)
+        
+    return grid
+
+def solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, iteration = 0):
+    for i in range(4):
+        print('iteration', iteration)
+        pos_x, pos_y = appended[iteration][1], appended[iteration][2] 
+        print('current pos', pos_y, pos_x)
+        piece_i = puzzle_pieces.index(appended[iteration][0])
+        print('og piece', puzzle_pieces[piece_i])
+        row = similarity_matrix[i + piece_i]
+        matches = [(row[j], j) for j in range(len(row)) if row[j] != float('inf')]
+
+        if len(matches) == 0:
+            continue
+        matches = sorted(matches, key=lambda tup: tup[0])
+ 
+        for match in matches:
+            matching_piece = puzzle_pieces[match[1] // 4]
+            if any(matching_piece != x[0] for x in appended):
+                matching_edge = match[1] % 4
+                matching_rotation = piece_rotation(i%4, matching_edge)
+                if i % 4 == 0: 
+                    pos_y -= 1
+                    print('updated pos', pos_y, pos_x) 
+                elif i % 4 == 1:
+                    pos_x += 1
+                    print('updated pos', pos_y, pos_x) 
+                elif i % 4 == 2:
+                    pos_y += 1
+                    print('updated pos', pos_y, pos_x) 
+                elif i % 4 == 3:
+                    pos_x -= 1
+                    print('updated pos', pos_y, pos_x) 
+                if grid[pos_y][pos_x] is not None:
+                    print('Not empty')
+                    continue
+                else:
+                    print(pos_y, pos_x)
+                    grid[pos_y][pos_x] = (matching_piece, matching_rotation)
+                    break
+            else:
+                print('Piece already appended')
+       
+
+        appended.append((matching_piece, pos_y, pos_x))
+        print('matching piece', matching_piece)
+        print('appended', appended)
+    return grid, appended
+
+
+
+
 def place_corner_piece(grid, corner_pieces, puzzle_pieces):
     rotated_pieces = []
     rotation = -1
