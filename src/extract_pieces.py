@@ -79,7 +79,7 @@ def find_contours(image, b):
 
     # segment image
     contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    contours = [contour for contour in contours if cv2.contourArea(contour) > 1000]
+    contours = [contour for contour in contours if cv2.contourArea(contour) > 10_000]
     contours = [cnt.reshape(-1, 2) for cnt in contours]
 
     # find average contour height
