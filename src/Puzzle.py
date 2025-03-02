@@ -32,7 +32,7 @@ def solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, iteration = 0)
 
         piece_i = puzzle_pieces.index(appended[iteration][0])
 
-        row = similarity_matrix[i + piece_i]
+        row = similarity_matrix[i + (piece_i * 4)]
         matches = [(row[j], j) for j in range(len(row)) if row[j] != float('inf')]
         if len(matches) == 0:
             continue
@@ -62,6 +62,7 @@ def solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, iteration = 0)
                 else:    
                     #grid, appended = check_other_edges(puzzle_pieces, similarity_matrix, grid, pos_y, pos_x, appended)
                     print('fixed appended', appended)
+                    break
             else:
                 print('Piece already appended')
                 continue
@@ -85,7 +86,7 @@ def check_surr_pieces(grid, puzzle_pieces, similarity_matrix, pos_y, pos_x, appe
     for x in surr:
         piece_i = puzzle_pieces.index(x[0])
         edge = x[1]
-        row = similarity_matrix[edge + piece_i]
+        row = similarity_matrix[edge + (piece_i*4)]
         matches = [(row[j], j) for j in range(len(row)) if row[j] != float('inf')]
         print('matches', matches)
         if len(matches) == 0:
@@ -106,7 +107,6 @@ def find_common_elements(lists):
     print('lists', lists)
     if len(lists) < 2:
         return None
-    
     
     new_lists = []
     for lst in lists:
