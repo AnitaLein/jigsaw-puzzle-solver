@@ -54,6 +54,7 @@ def solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, iteration = 0)
                     pos_x -= 1
 
                 if grid[pos_y][pos_x] is None:
+                    check_surr_pieces(grid, puzzle_pieces, similarity_matrix, pos_y, pos_x, appended)
                     grid[pos_y][pos_x] = (matching_piece, matching_rotation)
                     appended.append((matching_piece, pos_y, pos_x))
                     break
@@ -65,6 +66,31 @@ def solvePuzzle(similarity_matrix, puzzle_pieces, grid, appended, iteration = 0)
                 continue
     return grid, appended
 
+
+def check_surr_pieces(grid, puzzle_pieces, similarity_matrix, pos_y, pos_x, appended):
+    surr = []
+    if grid[pos_y + 1][pos_x] is not None:
+        surr.append((grid[pos_y + 1][pos_x][0], 2))
+    if grid[pos_y - 1][pos_x] is not None:
+        surr.append((grid[pos_y - 1][pos_x][0], 0))
+    if grid[pos_y][pos_x + 1] is not None:
+        surr.append((grid[pos_y][pos_x + 1][0], 1))
+    if grid[pos_y][pos_x - 1] is not None:
+        surr.append((grid[pos_y][pos_x - 1][0], 3))
+    if len(surr) == 1:
+        return
+    print('surr', surr)
+    all_matches = []
+    for x in surr:
+        piece_i = puzzle_pieces.index(x[0])
+        edge = x[1]
+        row = similarity_matrix[edge + piece_i]
+        matches = [(row[j], j) for j in range(len(row)) if row[j] != float('inf')]
+        if len(matches) == 0:
+            continue
+        matches = sorted(matches, key=lambda tup: tup[0])
+        all_matches.append(matches)
+    print('all matches', all_matches)
 
 def check_other_edges(puzzle_pieces, similarity_matrix, grid, pos_y, pos_x, appended):
     # remove the old piece
