@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from joblib import Parallel, delayed
 from extract_pieces import main as extract_pieces_main
 from classify_piece import main as classify_piece_main
 from compute_similarities import main as compute_similarities_main
@@ -28,8 +29,7 @@ def classify_pieces(puzzle_name, work_dir):
     pieces = contour_dir.glob("*.txt")
     pieces = [f.stem for f in pieces if f.is_file()]
 
-    for piece in pieces:
-        classify_piece_main(puzzle_name, piece, work_dir)
+    Parallel(n_jobs = 16)(delayed(classify_piece_main)(puzzle_name, piece, work_dir) for piece in pieces)
 
 
 if __name__ == "__main__":

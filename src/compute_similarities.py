@@ -1,13 +1,15 @@
 import sys
+from joblib import Parallel, delayed
+from itertools import batched
 from dataclasses import dataclass
 from typing import List
 from pathlib import Path
 import numpy as np
 from statistics import mean
-from puzzle_types import Edge, EdgeType
-from scipy.spatial import cKDTree
 import csv
 import time
+from scipy.spatial import cKDTree
+from puzzle_types import Edge, EdgeType
 
 @dataclass
 class PuzzlePieceShape:
@@ -81,8 +83,19 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
         for edge in piece.edges:
             edge.kdtree = cKDTree(edge.points)
 
-    similarity_matrix = []
-    for a in puzzle_pieces:
+    #similarity_matrix = []
+    #for puzzle_piece_chunk in batched(puzzle_pieces, 6):
+    #    similarities = compute_similarity_matrix_chunk(puzzle_piece_chunk, puzzle_pieces, print_progress)
+    #    similarity_matrix.append(similarities)
+
+    similarity_matrix = Parallel(n_jobs = 12)(delayed(compute_similarity_matrix_chunk)(puzzle_piece_chunk, puzzle_pieces, print_progress) for puzzle_piece_chunk in batched(puzzle_pieces, 6))
+
+    return np.concatenate(similarity_matrix)
+
+
+def compute_similarity_matrix_chunk(puzzle_piece_chunk, puzzle_pieces, print_progress = False):
+    chunk = []
+    for a in puzzle_piece_chunk:
         for i in range(4):
             similarities = []
             for b in puzzle_pieces:
@@ -90,8 +103,8 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
                     if a is b:
                         similarity = float("inf")
 
-                    # check if length differs by more than 5%
-                    elif abs(a.edges[i].length - b.edges[j].length) > 0.05 * mean([a.edges[i].length, b.edges[j].length]):
+                    # check if length differs by more than 10%
+                    elif abs(a.edges[i].length - b.edges[j].length) > 0.1 * mean([a.edges[i].length, b.edges[j].length]):
                         similarity = float("inf")
 
                     # check flat edge continuity
@@ -104,12 +117,12 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
 
                     similarities.append(similarity)
 
-            similarity_matrix.append(similarities)
-
             if print_progress:
                 print(".", end = "", flush = True)
 
-    return np.array(similarity_matrix)
+            chunk.append(similarities)
+
+    return chunk
 
 
 def compare_edges(a, b):
