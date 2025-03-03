@@ -14,7 +14,7 @@ class Vec2(tuple):
         return self.__add__(-i for i in other)
 
 
-def main(puzzle_name, work_dir):
+def main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 3):
     input_dir = Path(work_dir, puzzle_name, "similarities")
     solution_output_dir = Path(work_dir, puzzle_name, "solution")
 
@@ -28,7 +28,7 @@ def main(puzzle_name, work_dir):
 
     print("solving puzzle")
     t0 = time.time()
-    solution = solve_puzzle(similarity_matrix, piece_order, print_progress = True)
+    solution = solve_puzzle(similarity_matrix, piece_order, random_walks, max_random_walk_length, print_progress = True)
     t1 = time.time()
     print()
 
@@ -93,7 +93,7 @@ def read_similarity_matrix(file_path):
     return similarity_matrix
 
 
-def solve_puzzle(similarity_matrix, piece_order, print_progress = False):
+def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_random_walk_length = 3, print_progress = False):
     rng = np.random.default_rng()
     directions = [Vec2(0, 1), Vec2(1, 0), Vec2(0, -1), Vec2(-1, 0)]
 
@@ -111,11 +111,11 @@ def solve_puzzle(similarity_matrix, piece_order, print_progress = False):
 
         best_tentative = None
         best_score = float("inf")
-        for i in range(10_000):
+        for i in range(random_walks):
             # pick starting point for random walk
             pos = random.choice(frontier)
 
-            tentative = random_walk(pos, grid, used, similarity_matrix, piece_order, rng)
+            tentative = random_walk(pos, grid, used, similarity_matrix, piece_order, rng, max_random_walk_length)
             if not tentative:
                 continue
 
@@ -140,10 +140,10 @@ def solve_puzzle(similarity_matrix, piece_order, print_progress = False):
     return grid
 
 
-def random_walk(pos, grid, used, similarity_matrix, piece_order, rng):
+def random_walk(pos, grid, used, similarity_matrix, piece_order, rng, max_random_walk_length = 3):
     tentative = {}
     tentative_used = set()
-    while len(tentative) < 3:
+    while len(tentative) < max_random_walk_length:
         # pick an available direction
         edge, next_pos = pick_next_direction(pos, grid, tentative, similarity_matrix, rng)
         if edge is None:

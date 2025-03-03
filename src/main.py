@@ -9,7 +9,7 @@ def main(puzzle_name = "eda", data_dir = "../data", work_dir = "../work"):
     extract_pieces(puzzle_name, data_dir, work_dir)
     classify_pieces(puzzle_name, work_dir)
     compute_similarities_main(puzzle_name, work_dir)
-    solve_puzzle_main(puzzle_name, work_dir)
+    solve_puzzle_main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 3)
 
     print("done")
 
