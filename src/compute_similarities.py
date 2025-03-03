@@ -92,7 +92,7 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
                         similarity = float("inf")
 
                     # check if length differs by more than 3%
-                    elif abs(a.edges[i].length - b.edges[j].length) > 0.03 * mean([a.edges[i].length, b.edges[j].length]):
+                    elif abs(a.edges[i].length - b.edges[j].length) > 0.05 * mean([a.edges[i].length, b.edges[j].length]):
                         similarity = float("inf")
 
                     # check flat edge continuity
