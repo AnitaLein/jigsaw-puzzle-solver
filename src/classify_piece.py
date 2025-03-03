@@ -112,7 +112,7 @@ def classify_piece(contour):
 
 
 def create_puzzle_piece(bounding_box, top, right, bottom, left, top_offset, right_offset, bottom_offset, left_offset):
-    tab_height = 0.3
+    tab_height = 0.25
     tab_width = 0.25
     expansion = 0  # 0.03
 
