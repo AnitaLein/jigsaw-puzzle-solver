@@ -67,7 +67,7 @@ def main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 
     for row in output_matrix:
         for i, piece in enumerate(row):
             if piece:
-                row[i] = f"({piece[0]}, {piece[1]})"
+                row[i] = f"({piece_order[piece[0]]}, {piece[1]})"
             else:
                 row[i] = "None"
 
@@ -115,7 +115,7 @@ def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_rand
             # pick starting point for random walk
             pos = random.choice(frontier)
 
-            tentative = random_walk(pos, grid, used, similarity_matrix, piece_order, rng, max_random_walk_length)
+            tentative = random_walk(pos, grid, used, similarity_matrix, rng, max_random_walk_length)
             if not tentative:
                 continue
 
@@ -140,7 +140,7 @@ def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_rand
     return grid
 
 
-def random_walk(pos, grid, used, similarity_matrix, piece_order, rng, max_random_walk_length = 3):
+def random_walk(pos, grid, used, similarity_matrix, rng, max_random_walk_length = 3):
     tentative = {}
     tentative_used = set()
     while len(tentative) < max_random_walk_length:
