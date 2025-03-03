@@ -48,7 +48,7 @@ def main(data_dir, puzzle_name, scan_name, work_dir):
 
 
 def extract_pieces(scan, scan_name):
-    contours = find_contours(scan, False)
+    contours = find_contours(scan)
 
     puzzle_pieces = []
     for i, contour in enumerate(contours):
@@ -63,15 +63,24 @@ def extract_pieces(scan, scan_name):
     return puzzle_pieces
 
 
-def find_contours(image, b):
+def find_contours(image, morph = False):
     preprocessed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     preprocessed_image = cv2.medianBlur(preprocessed_image, 3)
 
     # otsu threshold
     _, preprocessed_image = cv2.threshold(preprocessed_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
+    # segment image
+    contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours = [contour for contour in contours if cv2.contourArea(contour) > 10_000]
+    contours = [cnt.reshape(-1, 2) for cnt in contours]
+
+    # redraw contours to remove holes
+    preprocessed_image = np.zeros(preprocessed_image.shape, dtype=np.uint8)
+    cv2.drawContours(preprocessed_image, contours, -1, 255, cv2.FILLED)
+
     # fill small holes in the background and foreground
-    if b:
+    if morph:
         kernel_size = 5
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
         preprocessed_image = cv2.morphologyEx(preprocessed_image, cv2.MORPH_OPEN, kernel)
