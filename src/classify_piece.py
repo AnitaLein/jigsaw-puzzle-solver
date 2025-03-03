@@ -6,33 +6,46 @@ from itertools import product
 from puzzle_types import Edge, EdgeType
 
 def main(puzzle_name, piece_name, work_dir):
-    input_dir = Path(work_dir, puzzle_name, "contours")
+    contour_input_dir = Path(work_dir, puzzle_name, "contours")
     edge_output_dir = Path(work_dir, puzzle_name, "edges")
+
+    image_input_dir = Path(work_dir, puzzle_name, "pieces")
+    classification_debug_dir = Path(work_dir, puzzle_name, "classification_debug")
+
+    debug = True
 
     # create output directory if it does not exist
     Path(edge_output_dir).mkdir(parents = True, exist_ok = True)
+    if debug:
+        Path(classification_debug_dir).mkdir(parents = True, exist_ok = True)
 
-    input_path = Path(input_dir, piece_name + ".txt")
-    contour = read_contour_file(input_path)
+    contour_input_path = Path(contour_input_dir, piece_name + ".txt")
+    contour = read_contour_file(contour_input_path)
 
     edges = extract_edges(contour, piece_name)
 
-    #debug = False
-    #if debug:
-    #    # draw edges
-    #    for edge in puzzle_piece.edges:
-    #        if edge.type == EdgeType.Flat:
-    #            color = (0, 255, 255, 255)
-    #        elif edge.type == EdgeType.Tab:
-    #            color = (0, 255, 0, 255)
-    #        elif edge.type == EdgeType.Blank:
-    #            color = (0, 0, 255, 255)
+    if debug:
+        image_path = Path(image_input_dir, piece_name + ".png")
+        image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+        assert image is not None, f"Could not read image at {image_path}"
 
-    #        cv2.polylines(puzzle_piece.image, [edge.points], False, color, 2)
+        # draw edges
+        for edge in edges:
+            if edge.type == EdgeType.Flat:
+                color = (0, 255, 255, 255)
+            elif edge.type == EdgeType.Tab:
+                color = (0, 255, 0, 255)
+            elif edge.type == EdgeType.Blank:
+                color = (0, 0, 255, 255)
 
-    #    # draw corners
-    #    for edge in puzzle_piece.edges:
-    #        cv2.circle(puzzle_piece.image, tuple(edge.points[0]), 5, (255, 0, 0, 255), cv2.FILLED)
+            cv2.polylines(image, [edge.points], False, color, 2)
+
+        # draw corners
+        for edge in edges:
+            cv2.circle(image, tuple(edge.points[0]), 5, (255, 0, 0, 255), cv2.FILLED)
+
+        # write debug image to disk
+        cv2.imwrite(Path(classification_debug_dir, f"{piece_name}.png"), image)
 
     # write edges to disk
     with open(Path(edge_output_dir, f"{piece_name}.txt"), "w") as file:
@@ -202,7 +215,7 @@ def get_corner_indices(synthetic_contour, reference_contour, edge_types):
 
     # slightly move corners diagonally outwards to improve accuracy
     directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
-    corners = [corner + direction for corner, direction in zip(corners, directions)]
+    corners = [corner + 40 * direction for corner, direction in zip(corners, np.array(directions))]
 
     # find the indices of the nearest contour points
     return [min(range(len(reference_contour)), key = lambda i: np.linalg.norm(corner - reference_contour[i])) for corner in corners]
