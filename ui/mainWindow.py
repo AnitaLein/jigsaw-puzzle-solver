@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         image_base_path = '../work/eda/pieces/'
 
         # Grid settings
-        grid_spacing = 500  # Adjust as needed  
+        grid_spacing = 400  # Adjust as needed  
 
         # Loop through the matrix and place images
         for row_idx, row in enumerate(matrix):
@@ -60,9 +60,11 @@ class MainWindow(QMainWindow):
                     item = QGraphicsPixmapItem(pixmap)
 
                     # Positioning with offset
-                    item.setRotation(rotation_count * 90)  # Convert count to degrees
-
-                    item.setPos(col_idx * grid_spacing, row_idx *0)
+                    #item.setRotation(rotation_count * 90)  # Convert count to degrees
+                    #setOriginPoint in center of image
+                    item.setTransformOriginPoint(pixmap.width() / 2, pixmap.height() / 2)
+                    item.setRotation(rotation[rotation_count])
+                    item.setPos(col_idx * grid_spacing, row_idx * grid_spacing)
                     item.setFlag(QGraphicsPixmapItem.ItemIsSelectable)
                     item.setFlag(QGraphicsPixmapItem.ItemIsMovable)
 
