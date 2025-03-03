@@ -51,8 +51,8 @@ def main(puzzle_name, work_dir):
         writer.writerows(similarity_matrix)
 
     # write the puzzle piece names
-    with open(Path(similarities_output_dir, "piece_order.txt"), mode = "w", newline = "") as file:
-        file.write(", ".join([piece.name for piece in puzzle_pieces]))
+    with open(Path(similarities_output_dir, "piece_order.txt"), mode = "w") as file:
+        file.write(", ".join([piece.name for piece in puzzle_pieces]) + "\n")
 
 
 def read_edges_file(file_path):
@@ -91,8 +91,8 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
                     if a is b:
                         similarity = float("inf")
 
-                    # check if length differs by more than 3%
-                    elif abs(a.edges[i].length - b.edges[j].length) > 0.03 * mean([a.edges[i].length, b.edges[j].length]):
+                    # check if length differs by more than 5%
+                    elif abs(a.edges[i].length - b.edges[j].length) > 0.05 * mean([a.edges[i].length, b.edges[j].length]):
                         similarity = float("inf")
 
                     # check flat edge continuity
