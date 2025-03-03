@@ -78,7 +78,7 @@ def main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 
 
     with open(Path(solution_output_dir, "solution.txt"), "w") as file:
         for row in output_matrix:
-            file.write(", ".join(row) + "\n")
+            file.write("; ".join(row) + "\n")
 
 
 def read_similarity_matrix(file_path):
