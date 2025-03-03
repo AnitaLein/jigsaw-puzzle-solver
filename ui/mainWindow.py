@@ -1,11 +1,7 @@
-from enum import Enum
-import random
-import re
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QGridLayout, QWidget, QLabel, QGraphicsScene
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap, QTransform
 import sys
-
-from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsPixmapItem
-from PySide6.QtGui import QColor, QColorConstants, QPixmap
-from PySide6.QtCore import Qt, QObject, QEvent
 
 # pyside6-uic form.ui -o ui_form.py
 from ui_mainWindow import Ui_MainWindow
@@ -17,24 +13,23 @@ rotation = {
     3 : 270
 }
 
-
 class MainWindow(QMainWindow):
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
         self.scene = QGraphicsScene()
 
-        matrix_path = '../work/eda/solution/solution.txt'
+        matrix_path = '../work/horse208/solution/solution.txt'
         matrix = []
         with open(matrix_path, "r") as f:
             for line in f:
                 row = []
-                # Convert matches to list of tuples, ensuring numbers are converted to int
                 elements = line.strip().split("; ")  # Split based on "), ("
-                print(elements)
                 for elem in elements:
+                    if elem == None:
+                        continue
                     elem = elem.strip("() ")  # Remove parentheses and spaces
                     parts = elem.rsplit(", ", 1)  # Split only at the last comma to preserve "2_0"
                     if len(parts) == 2:
@@ -42,39 +37,53 @@ class MainWindow(QMainWindow):
                         row.append((img_idx, rot))
                 matrix.append(row)
 
-
         # Image loading base path
-        image_base_path = '../work/eda/pieces/'
+        image_base_path = '../work/horse208/pieces/'
 
-        # Grid settings
-        grid_spacing = 500  # Adjust as needed  
+        # Create a grid layout for the main window
+        grid_layout = QGridLayout()
 
-        # Loop through the matrix and place images
+        # Define a zoom-out factor (e.g., 0.5 for 50% size)
+        zoom_factor = 0.225
+
+        horizontal_spacing = 5  # Space between columns
+        vertical_spacing = 5  # Space between rows
+
+        # Set horizontal and vertical spacing between the items
+        grid_layout.setHorizontalSpacing(horizontal_spacing)  # Set horizontal spacing
+        grid_layout.setVerticalSpacing(vertical_spacing)  # Set vertical spacing
+        grid_layout.setContentsMargins(5, 5, 5, 5)  # Optional: Set margins around the grid
+
+        # Loop through the matrix and create labels for each image
         for row_idx, row in enumerate(matrix):
             for col_idx, (image_index, rotation_count) in enumerate(row):
-                print(row_idx, col_idx, image_index, rotation_count)
                 image_path = f"{image_base_path}{image_index}.png"
                 pixmap = QPixmap(image_path)
 
                 if not pixmap.isNull():  # Ensure the image loads correctly
-                    item = QGraphicsPixmapItem(pixmap)
+                    # Apply zoom factor to resize the image
+                    new_width = int(pixmap.width() * zoom_factor)
+                    new_height = int(pixmap.height() * zoom_factor)
+                    pixmap = pixmap.scaled(new_width, new_height, Qt.AspectRatioMode.KeepAspectRatio)
 
-                    # Positioning with offset
-                    item.setRotation(rotation_count * 90)  # Convert count to degrees
+                    # Create a QTransform for rotating the pixmap
+                    transform = QTransform()
+                    transform.rotate(rotation_count * 90)  # Rotate based on the rotation_count
+                    pixmap = pixmap.transformed(transform)
 
-                    item.setPos(col_idx * grid_spacing, row_idx *0)
-                    item.setFlag(QGraphicsPixmapItem.ItemIsSelectable)
-                    item.setFlag(QGraphicsPixmapItem.ItemIsMovable)
+                    # Create QLabel for each image
+                    label = QLabel()
+                    label.setPixmap(pixmap)
 
-                    self.scene.addItem(item)
+                    # Add the QLabel to the grid layout at the correct row and column
+                    grid_layout.addWidget(label, row_idx, col_idx)
 
-        # make scene rect very large to allow for scrolling
-        self.scene.setSceneRect(-32000, -32000, 64000, 64000)
+        # Create a QWidget to hold the grid layout
+        central_widget = QWidget(self)
+        central_widget.setLayout(grid_layout)
 
-        self.ui.puzzleView.setScene(self.scene)
-
-        # center on the scene
-        #self.ui.puzzleView.centerOn(0, 0)
+        # Set central widget to the main window
+        self.setCentralWidget(central_widget)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

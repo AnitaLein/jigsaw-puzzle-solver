@@ -6,7 +6,7 @@ from classify_piece import main as classify_piece_main
 from compute_similarities import main as compute_similarities_main
 from solve_puzzle import main as solve_puzzle_main
 
-def main(puzzle_name = "eda", data_dir = "../data", work_dir = "../work"):
+def main(puzzle_name = "horse300", data_dir = "../data", work_dir = "../work"):
     extract_pieces(puzzle_name, data_dir, work_dir)
     classify_pieces(puzzle_name, work_dir)
     compute_similarities_main(puzzle_name, work_dir)
