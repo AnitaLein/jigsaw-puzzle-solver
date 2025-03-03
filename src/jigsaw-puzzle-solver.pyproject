@@ -1,9 +1,10 @@
 {
     "files": [
         "main.py",
-        "compute_similarities.py",
         "extract_pieces.py",
         "classify_piece.py",
+        "compute_similarities.py",
+        "solve_puzzle.py",
         "puzzle_types.py"
     ]
 }

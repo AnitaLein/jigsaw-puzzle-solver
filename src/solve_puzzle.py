@@ -1,10 +1,6 @@
 import sys
-from dataclasses import dataclass
-from typing import List
 from pathlib import Path
 import numpy as np
-from statistics import mean
-import math
 import csv
 import time
 import random

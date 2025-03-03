@@ -4,7 +4,6 @@ from typing import List
 from pathlib import Path
 import numpy as np
 from statistics import mean
-import math
 from puzzle_types import Edge, EdgeType
 from scipy.spatial import cKDTree
 import csv

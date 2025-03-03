@@ -1,45 +1,36 @@
+import sys
+from pathlib import Path
 from extract_pieces import main as extract_pieces_main
 from classify_piece import main as classify_piece_main
 from compute_similarities import main as compute_similarities_main
-from Puzzle import *
+from solve_puzzle import main as solve_puzzle_main
 
-data_dir = "../data"
-work_dir = "../work"
-puzzle_name = "eda"
-scans = ["1", "2"]
+def main(puzzle_name = "eda", data_dir = "../data", work_dir = "../work"):
+    extract_pieces(puzzle_name, data_dir, work_dir)
+    classify_pieces(puzzle_name, work_dir)
+    compute_similarities_main(puzzle_name, work_dir)
+    solve_puzzle_main(puzzle_name, work_dir)
 
-'''for scan in scans:
-    extract_pieces_main(data_dir, puzzle_name, scan, work_dir)
+    print("done")
 
-    for piece_number in range(0, 6):
-        classify_piece_main(puzzle_name, scan + "_" + str(piece_number), work_dir)
 
-compute_similarities_main(puzzle_name, work_dir)'''
+def extract_pieces(puzzle_name, data_dir, work_dir):
+    scan_dir = Path(data_dir, puzzle_name)
+    scans = scan_dir.glob("*b.jpg")
+    scans = [f.stem[:-1] for f in scans if f.is_file()]
 
-# read similarity matrix
-similarity_matrix = []
-with open(f'{work_dir}/{puzzle_name}/similarities/matrix.txt', 'r') as f:
-    lines = f.readlines()
+    for scan in scans:
+        extract_pieces_main(data_dir, puzzle_name, scan, work_dir)
 
-for line in lines:
-    row = [float(x) if x != "inf" else float('inf') for x in line.strip().split(",")]
-    similarity_matrix.append(row)
 
-# read piece order and save it to a list
-f = open(f'{work_dir}/{puzzle_name}/similarities/piece_order.txt', 'r')
-puzzle_pieces = f.read().split(',')
-f.close()
+def classify_pieces(puzzle_name, work_dir):
+    contour_dir = Path(work_dir, puzzle_name, "contours")
+    pieces = contour_dir.glob("*.txt")
+    pieces = [f.stem for f in pieces if f.is_file()]
 
-# initialize the grid
-grid = [[None for _ in range(10)] for _ in range(len(puzzle_pieces) * 2 + 1)]
-grid, appended = setFirstPiece(grid, puzzle_pieces)
-grid = iterateOverAppended(appended, grid, puzzle_pieces, similarity_matrix)
-save_grid_to_csv(grid)
-'''corner_pieces = load_puzzle_pieces_from_csv('corner_pieces')
-grid = solvePuzzle(puzzle_pieces, similarity_matrix, corner_pieces)
-grid, connected_pieces, rotated_pieces = place_corner_piece(grid, corner_pieces, puzzle_pieces)
-grid = place_edge_pieces(grid, puzzle_pieces, similarity_matrix, connected_pieces, rotated_pieces)
+    for piece in pieces:
+        classify_piece_main(puzzle_name, piece, work_dir)
 
-'''
-print('done')
 
+if __name__ == "__main__":
+    main(*sys.argv[1:])
