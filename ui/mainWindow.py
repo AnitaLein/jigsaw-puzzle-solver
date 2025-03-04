@@ -2,12 +2,13 @@ from enum import Enum
 import random
 import re
 import sys
+import qdarkstyle
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsPixmapItem
 from PySide6.QtGui import QColor, QColorConstants, QPixmap
 from PySide6.QtCore import Qt, QObject, QEvent
 
-# pyside6-uic form.ui -o ui_form.py
+# pyside6-uic mainWindow.ui -o ui_mainWindow.py
 from ui_mainWindow import Ui_MainWindow
 
 rotation = {
@@ -16,6 +17,13 @@ rotation = {
     2 : 180,
     3 : 270
 }
+
+def main(puzzle_name, grid_spacing):
+    app = QApplication(sys.argv)
+    app.setStyleSheet(qdarkstyle.load_stylesheet())
+    widget = MainWindow(puzzle_name, int(grid_spacing))
+    widget.show()
+    sys.exit(app.exec())
 
 
 class MainWindow(QMainWindow):
@@ -84,8 +92,6 @@ class MainWindow(QMainWindow):
         # center on the scene
         #self.ui.puzzleView.centerOn(0, 0)
 
-def main(puzzle_name, grid_spacing):
-    app = QApplication(sys.argv)
-    widget = MainWindow(puzzle_name, int(grid_spacing))
-    widget.show()
-    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main("demo2", 300)
