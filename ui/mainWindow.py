@@ -22,12 +22,15 @@ class MainWindow(QMainWindow):
     def __init__(self, puzzle_name, grid_spacing, parent = None):
 
         super().__init__(parent)
+        
         self.puzzle_name = puzzle_name
         self.grid_spacing = grid_spacing
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
         self.scene = QGraphicsScene()
+        # draw background as black 
+        self.scene.setBackgroundBrush(QColor(35, 35, 35))
         matrix_path = f"../work/{self.puzzle_name}/solution/solution.txt"
         matrix = []
         with open(matrix_path, "r") as f:
