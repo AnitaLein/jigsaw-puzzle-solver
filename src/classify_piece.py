@@ -54,6 +54,7 @@ def main(puzzle_name, piece_name, work_dir):
             file.write(f"{edge.type.name}: {points}\n")
 
     print("piece classified")
+    sys.stdout.flush()
 
 
 def read_contour_file(file_path):

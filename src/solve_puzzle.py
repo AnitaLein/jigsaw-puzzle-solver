@@ -1,4 +1,5 @@
 import sys
+from joblib import Parallel, delayed
 from pathlib import Path
 import numpy as np
 import csv
@@ -12,9 +13,11 @@ class Vec2(tuple):
         return Vec2(*([sum(x) for x in zip(self, other)]))
     def __sub__(self, other):
         return self.__add__(-i for i in other)
+    def __reduce__(self):
+        return (self.__class__, tuple(self))
 
 
-def main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 3):
+def main(puzzle_name, work_dir, random_walks, max_random_walk_length, workers):
     input_dir = Path(work_dir, puzzle_name, "similarities")
     solution_output_dir = Path(work_dir, puzzle_name, "solution")
 
@@ -28,7 +31,7 @@ def main(puzzle_name, work_dir, random_walks = 10_000, max_random_walk_length = 
 
     print("solving puzzle")
     t0 = time.time()
-    solution = solve_puzzle(similarity_matrix, piece_order, random_walks, max_random_walk_length, print_progress = True)
+    solution = solve_puzzle(similarity_matrix, piece_order, random_walks, max_random_walk_length, workers, print_progress = True)
     t1 = time.time()
     print()
 
@@ -93,9 +96,17 @@ def read_similarity_matrix(file_path):
     return similarity_matrix
 
 
-def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_random_walk_length = 3, print_progress = False):
-    rng = np.random.default_rng()
+def worker_initializer(similarity_matrix):
+    global similarity_matrix_global
+    similarity_matrix_global = similarity_matrix
+    time.sleep(0.1) # hack to reduce chance of race condition where one worker gets initialized more than once and another not at all
+
+
+def solve_puzzle(similarity_matrix, piece_order, random_walks, max_random_walk_length, workers, print_progress = False):
     directions = [Vec2(0, 1), Vec2(1, 0), Vec2(0, -1), Vec2(-1, 0)]
+
+    parallel = Parallel(n_jobs = workers)
+    parallel(delayed(worker_initializer)(similarity_matrix) for _ in range(workers))
 
     grid = {Vec2(0, 0): (0, 0)}
     used = {0}
@@ -109,21 +120,10 @@ def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_rand
                     frontier.append(pos)
                     break
 
-        best_tentative = None
-        best_score = float("inf")
-        for i in range(random_walks):
-            # pick starting point for random walk
-            pos = random.choice(frontier)
+        # find best random walk
+        results = parallel(delayed(n_random_walks)(grid, used, frontier, random_walks // workers, max_random_walk_length) for _ in range(workers))
 
-            tentative = random_walk(pos, grid, used, similarity_matrix, rng, max_random_walk_length)
-            if not tentative:
-                continue
-
-            score = score_random_walk(grid, tentative, similarity_matrix)
-            if score < best_score:
-                best_tentative = tentative
-                best_score = score
-
+        best_tentative, best_score = min(results, key = lambda result: result[1])
         if not best_tentative and print_progress:
             print("no valid random walk found")
             break
@@ -140,7 +140,27 @@ def solve_puzzle(similarity_matrix, piece_order, random_walks = 10_000, max_rand
     return grid
 
 
-def random_walk(pos, grid, used, similarity_matrix, rng, max_random_walk_length = 3):
+def n_random_walks(grid, used, frontier, n, max_random_walk_length):
+    rng = np.random.default_rng()
+
+    best_tentative = None
+    best_score = float("inf")
+    for i in range(n):
+        pos = random.choice(frontier)
+
+        tentative = random_walk(pos, grid, used, similarity_matrix_global, rng, max_random_walk_length)
+        if not tentative:
+            continue
+
+        score = score_random_walk(grid, tentative, similarity_matrix_global)
+        if score < best_score:
+            best_tentative = tentative
+            best_score = score
+
+    return (best_tentative, best_score)
+
+
+def random_walk(pos, grid, used, similarity_matrix, rng, max_random_walk_length):
     tentative = {}
     tentative_used = set()
     while len(tentative) < max_random_walk_length:

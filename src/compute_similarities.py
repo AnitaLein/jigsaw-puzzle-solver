@@ -17,7 +17,7 @@ class PuzzlePieceShape:
     edges: List[Edge]
 
 
-def main(puzzle_name, work_dir):
+def main(puzzle_name, work_dir, workers):
     input_dir = Path(work_dir, puzzle_name, "edges")
     similarities_output_dir = Path(work_dir, puzzle_name, "similarities")
 
@@ -38,7 +38,7 @@ def main(puzzle_name, work_dir):
 
     print("computing similarity matrix")
     t0 = time.time()
-    similarity_matrix = compute_similarity_matrix(puzzle_pieces, print_progress = True)
+    similarity_matrix = compute_similarity_matrix(puzzle_pieces, workers, print_progress = True)
     t1 = time.time()
     print()
 
@@ -72,7 +72,12 @@ def read_edges_file(file_path):
     return edges
 
 
-def compute_similarity_matrix(puzzle_pieces, print_progress = False):
+def worker_initializer(puzzle_pieces):
+    global puzzle_pieces_global
+    puzzle_pieces_global = puzzle_pieces
+
+
+def compute_similarity_matrix(puzzle_pieces, workers, print_progress = False):
     # calculate edge lengths
     for piece in puzzle_pieces:
         for edge in piece.edges:
@@ -83,22 +88,19 @@ def compute_similarity_matrix(puzzle_pieces, print_progress = False):
         for edge in piece.edges:
             edge.kdtree = cKDTree(edge.points)
 
-    #similarity_matrix = []
-    #for puzzle_piece_chunk in batched(puzzle_pieces, 6):
-    #    similarities = compute_similarity_matrix_chunk(puzzle_piece_chunk, puzzle_pieces, print_progress)
-    #    similarity_matrix.append(similarities)
-
-    similarity_matrix = Parallel(n_jobs = 12)(delayed(compute_similarity_matrix_chunk)(puzzle_piece_chunk, puzzle_pieces, print_progress) for puzzle_piece_chunk in batched(puzzle_pieces, 6))
+    parallel = Parallel(n_jobs = workers)
+    parallel(delayed(worker_initializer)(puzzle_pieces) for _ in range(workers))
+    similarity_matrix = parallel(delayed(compute_similarity_matrix_chunk)(puzzle_piece_chunk, print_progress) for puzzle_piece_chunk in batched(puzzle_pieces, 6))
 
     return np.concatenate(similarity_matrix)
 
 
-def compute_similarity_matrix_chunk(puzzle_piece_chunk, puzzle_pieces, print_progress = False):
+def compute_similarity_matrix_chunk(puzzle_piece_chunk, print_progress = False):
     chunk = []
     for a in puzzle_piece_chunk:
         for i in range(4):
             similarities = []
-            for b in puzzle_pieces:
+            for b in puzzle_pieces_global:
                 for j in range(4):
                     if a is b:
                         similarity = float("inf")
