@@ -28,7 +28,6 @@ def main(puzzle_name, grid_spacing):
 
 class MainWindow(QMainWindow):
     def __init__(self, puzzle_name, grid_spacing, parent = None):
-
         super().__init__(parent)
         self.puzzle_name = puzzle_name
         self.grid_spacing = grid_spacing
@@ -36,22 +35,23 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.scene = QGraphicsScene()
+
         matrix_path = f"../work/{self.puzzle_name}/solution/solution.txt"
         matrix = []
         with open(matrix_path, "r") as f:
             for line in f:
+                line = line.replace(" ", "")
+                line = line.replace("(", "")
+                line = line.replace(")", "")
+
                 row = []
-                # Convert matches to list of tuples, ensuring numbers are converted to int
-                elements = line.strip().split("; ")  # Split based on "), ("
-                print(elements)
-                for elem in elements:
-                    if elem == None:
+                for piece in line.split(";"):
+                    if piece == "None":
+                        row.append((None, None))
                         continue
-                    elem = elem.strip("() ")  # Remove parentheses and spaces
-                    parts = elem.rsplit(", ", 1)  # Split only at the last comma to preserve "2_0"
-                    if len(parts) == 2:
-                        img_idx, rot = parts[0], int(parts[1])  # Convert rotation to int
-                        row.append((img_idx, rot))
+
+                    img_idx, rot = piece.split(",")
+                    row.append((img_idx, int(rot)))
                 matrix.append(row)
 
 
