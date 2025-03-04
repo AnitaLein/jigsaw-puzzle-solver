@@ -48,7 +48,7 @@ def main(data_dir, puzzle_name, scan_name, work_dir):
 
 
 def extract_pieces(scan, scan_name):
-    contours = find_contours(scan)
+    contours = find_contours(scan, morph = True)
 
     puzzle_pieces = []
     for i, contour in enumerate(contours):
