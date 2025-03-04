@@ -93,7 +93,7 @@ def classify_piece(contour):
 
     def genParams():
         for edge_types in product(EdgeType, repeat = 4):
-            nonFlatOffsets = np.linspace(-0.1, 0.1, 3)
+            nonFlatOffsets = np.linspace(-0.15, 0.15, 5)
             possible_offsets = [([0] if val == 0 else nonFlatOffsets) for val in edge_types]
 
             for offsets in product(*possible_offsets):
