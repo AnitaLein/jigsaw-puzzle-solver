@@ -19,15 +19,16 @@ rotation = {
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent = None):
-        puzzle_name = "horse"
+    def __init__(self, puzzle_name, grid_spacing, parent = None):
+
         super().__init__(parent)
+        self.puzzle_name = puzzle_name
+        self.grid_spacing = grid_spacing
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
         self.scene = QGraphicsScene()
-
-        matrix_path = '../work/horse208/solution/solution.txt'
+        matrix_path = f"../work/{self.puzzle_name}/solution/solution.txt"
         matrix = []
         with open(matrix_path, "r") as f:
             for line in f:
@@ -47,10 +48,10 @@ class MainWindow(QMainWindow):
 
 
         # Image loading base path
-        image_base_path = '../work/horse208/pieces/'
+        image_base_path = f"../work/{puzzle_name}/pieces/"
 
         # Grid settings
-        grid_spacing = 300  # Adjust as needed  
+        grid_spacing = self.grid_spacing  # Adjust as needed  
 
         # Loop through the matrix and place images
         for row_idx, row in enumerate(matrix):
@@ -83,8 +84,8 @@ class MainWindow(QMainWindow):
         # center on the scene
         #self.ui.puzzleView.centerOn(0, 0)
 
-if __name__ == "__main__":
+def main(puzzle_name, grid_spacing):
     app = QApplication(sys.argv)
-    widget = MainWindow()
+    widget = MainWindow(puzzle_name, int(grid_spacing))
     widget.show()
     sys.exit(app.exec())

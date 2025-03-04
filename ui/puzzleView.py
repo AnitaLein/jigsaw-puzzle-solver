@@ -14,7 +14,7 @@ class PuzzleView(QGraphicsView):
         self.panning = False
         self.rubberBanding = False
         self.dragged_items = []
-        self.zoom_levels = [0.10,0.125, 0.25, 0.5, 1, 2, 4, 8]
+        self.zoom_levels = [0.10,0,11, 0.125, 0.13, 0.25, 0.5, 1, 2, 4, 8]
         self.zoom_index = 0.125
 
     def mousePressEvent(self, event):
