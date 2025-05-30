@@ -35,6 +35,7 @@ def classify_pieces(puzzle_name, work_dir, workers):
 
     Parallel(n_jobs = workers)(delayed(classify_piece_main)(puzzle_name, piece, work_dir) for piece in pieces)
 
+
 def fourier_transform(puzzle_name, work_dir):
     # read from pieces directory
     image_dir = Path(work_dir, puzzle_name, "pieces")
@@ -46,8 +47,6 @@ def fourier_transform(puzzle_name, work_dir):
         image[:, :, 3] = 255
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
         compute_2d_fft(work_dir, puzzle_name, image, piece)
-
-    
 
 
 if __name__ == "__main__":
