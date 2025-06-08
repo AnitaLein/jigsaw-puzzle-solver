@@ -6,6 +6,7 @@ from extract_pieces import main as extract_pieces_main
 from classify_piece import main as classify_piece_main
 from compute_similarities import main as compute_similarities_main
 from solve_puzzle import main as solve_puzzle_main
+from place_pieces import main as place_pieces_main
 from Fourier import compute_2d_fft  # Replace 'some_module' with the actual module name
 sys.path.append('../ui')
 from mainWindow import main as main_window_main
@@ -15,6 +16,7 @@ def main(puzzle_name = "eda", data_dir = "../data", work_dir = "../work", random
     classify_pieces(puzzle_name, work_dir, workers)
     compute_similarities_main(puzzle_name, work_dir, workers)
     solve_puzzle_main(puzzle_name, work_dir, random_walks, max_random_walk_length, workers)
+    place_pieces_main(puzzle_name, work_dir)
     main_window_main(puzzle_name, 400)
     print("done")
 

@@ -5,6 +5,7 @@
         "classify_piece.py",
         "compute_similarities.py",
         "solve_puzzle.py",
+        "place_pieces.py",
         "puzzle_types.py"
     ]
 }
