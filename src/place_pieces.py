@@ -166,7 +166,7 @@ def compute_placements(solution_matrix, puzzle_pieces, print_progress = False):
 
         alignment_transformation = find_transformation_lsq(np.array([[0, 0], [1000, 0]]), np.array([point_left, point_right]))
         for piece_name in placements:
-            placements[piece_name] = transform_transform(placements[piece_name], alignment_transformation)
+            placements[piece_name] = compose_transformations(placements[piece_name], alignment_transformation)
 
     # calculate top left, move transformations to origin # todo: fix
     top_left = np.array([np.inf, np.inf])
@@ -201,7 +201,7 @@ def optimize_placement(puzzle_pieces, solution_matrix, placements, neighbor_tran
         edge_neighbor = neighbor_edges[(direction_neighbor - neighbor_rotation) % 4]
 
         # fit edge to neighbor edge
-        transformations.append(transform_transform(neighbor_transformations[piece_name][neighbor_name], placements[neighbor_name]))
+        transformations.append(compose_transformations(neighbor_transformations[piece_name][neighbor_name], placements[neighbor_name]))
 
     if not transformations:
         # no neighbors, return initial placement
@@ -276,7 +276,7 @@ def find_matches_closest(a, b, transform):
     return (a[indices], b.points)
 
 
-def transform_transform(a, b):
+def compose_transformations(a, b):
     t_a, w_a = a
     t_b, w_b = b
 
