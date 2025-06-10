@@ -6,7 +6,7 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 
 - **Puzzle Piece Extraction**: Automatically identifies and segments individual pieces from the scanned input.
 - **Piece Classification**: Analyzes the geometry of pieces to classify edges (flat, tab, blank).
-- **Piece Matching**: Uses **Iterative Closest Point (ICP)** to match puzzle edges based on shape and appearance.
+- **Piece Matching**: Uses **Iterative Closest Point (ICP)** to match puzzle edges based on their shape.
 - **Solver Algorithm**: Constructs the final puzzle layout using a **random walk** over a **similarity matrix** derived from matching scores.
 - **Interactive GUI**: Built with **Qt**, the graphical interface allows users to view the assembled puzzle.
 
@@ -21,8 +21,8 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 
 - **Scanning**: The backside of the puzzle pieces should be scanned, the algorithm is not capable yet to process the front side of the puzzle.
 - **Background**: Use a **black cloth** or other dark, non-reflective background to ensure high contrast between the pieces and the surface.
-- **Alignment**: Pieces should be **aligned as straight as possible**—not rotated or flipped—for best classification and matching results.
-- **Spacing**: Leave **enough space** between pieces so that individual contours can be accurately extracted and identified.
+- **Alignment**: Pieces should be **aligned as straight as possible** for best classification and matching results.
+- **Spacing**: Leave **enough space** between pieces so that individual contours can be accurately identified and extracted.
 
 
 ## 🚀 Getting Started
