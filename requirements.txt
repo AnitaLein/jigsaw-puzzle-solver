@@ -1,0 +1,5 @@
+opencv-python
+joblib
+numpy
+scipy
+PySide6
