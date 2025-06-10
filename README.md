@@ -28,9 +28,18 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 ## 🚀 Getting Started
 
 ### dependencies:
+
+Make sure all the necessary dependencies are installed:
+
 ```bash
 pip install -r requirements.txt
 ```
+Now you can run:
+
+```bash
+python src/main.py
+```
+
 ## Results:
 **Input 12-piece puzzle:**
 <p float="left">
