@@ -1,6 +1,6 @@
 # 🧩 Jigsaw Puzzle Solver
 
-This project implements a complete pipeline for solving jigsaw puzzles from image input to final assembly, using computer vision and algorithmic strategies. The final solution is visualized with an interactive GUI built using the Qt framework.
+This project implements a complete pipeline for solving jigsaw puzzles from image input to final assembly, using computer vision and algorithmic strategies. The final solution is visualized with an interactive GUI built using the Qt framework. The algorithm has been able to solve a puzzle up to 300 pieces.
 
 ## 📌 Features
 
@@ -19,7 +19,7 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 
 ## 📷 Data Requirements:
 
-- **Scanning**: Puzzle pieces should be scanned.
+- **Scanning**: The backside of the puzzle pieces should be scanned, the algorithm is not capable yet to process the front side of the puzzle.
 - **Background**: Use a **black cloth** or other dark, non-reflective background to ensure high contrast between the pieces and the surface.
 - **Alignment**: Pieces should be **aligned as straight as possible**—not rotated or flipped—for best classification and matching results.
 - **Spacing**: Leave **enough space** between pieces so that individual contours can be accurately extracted and identified.
@@ -30,3 +30,16 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 ### dependencies:
 ```bash
 pip install -r requirements.txt
+```
+## Results:
+**Input 12-piece puzzle:**
+
+<img src="data/eda/1b.jpg" alt="Input 12-piece puzzle" width="200"/>
+
+**Solved 12-piece puzzle:**
+
+<img src="data/eda/eda_solved.png" alt="Solved 12-piece puzzle" width="500"/>
+
+**Solved 300-piece puzzle:**
+
+<img src="data/horse300/300_solved.png" alt="Solved 300-piece puzzle" width="500"/>
