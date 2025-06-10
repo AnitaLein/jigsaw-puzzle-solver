@@ -33,9 +33,10 @@ pip install -r requirements.txt
 ```
 ## Results:
 **Input 12-piece puzzle:**
-
+<p float="left">
 <img src="data/eda/1b.jpg" alt="Input 12-piece puzzle" width="200"/>
-
+<img src="data/eda/2b.jpg" alt="Input 12-piece puzzle" width="200"/>
+</p>
 **Solved 12-piece puzzle:**
 
 <img src="data/eda/eda_solved.png" alt="Solved 12-piece puzzle" width="500"/>
