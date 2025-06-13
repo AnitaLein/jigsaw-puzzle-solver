@@ -27,7 +27,7 @@ This project implements a complete pipeline for solving jigsaw puzzles from imag
 
 ## 🚀 Getting Started
 
-### dependencies:
+### Dependencies:
 
 Make sure all the necessary dependencies are installed:
 
